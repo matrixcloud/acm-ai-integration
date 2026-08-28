@@ -19,3 +19,12 @@
 │ Milvus              PostgreSQL              Redis              │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+## Mono Repo
+
+- customer-agent: 客服服务 Agent
+- customer-svc: 客服服务
+- order-svc: 订单服务
+- rag-svc: RAG 服务
+- webapps: 前端应用
+  - customer-app: 客服前端

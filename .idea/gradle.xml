@@ -9,6 +9,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/customer-agent" />
+            <option value="$PROJECT_DIR$/customer-svc" />
+            <option value="$PROJECT_DIR$/order-svc" />
+            <option value="$PROJECT_DIR$/rag-svc" />
           </set>
         </option>
       </GradleProjectSettings>

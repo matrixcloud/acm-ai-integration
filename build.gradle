@@ -1,25 +1,22 @@
 plugins {
-    id 'java'
+    id 'base'
 }
 
-group = 'org.acm'
-version = '1.0-SNAPSHOT'
+allprojects {
+    group = 'org.acm'
+    version = '0.0.1-SNAPSHOT'
+}
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+subprojects {
+    pluginManager.withPlugin('java') {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(17)
+            }
+        }
+
+        tasks.named('test') {
+            useJUnitPlatform()
+        }
     }
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-}
-
-test {
-    useJUnitPlatform()
 }
