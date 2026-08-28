@@ -5,7 +5,7 @@ description: Use when reviewing changes before commiting
 
 # Reviewing 待提交变动
 
-使用最高 effort subagent 进行 review，纯文档改动可跳过。
+使用最高 reasoning_effort 为 max 的 subagent 进行 review，纯文档改动可跳过。
 
 ## 执行门禁
 
@@ -27,6 +27,8 @@ description: Use when reviewing changes before commiting
 
 ## 输出要求
 
+必须输出 Findings 表格：
+
 - 按 Findings 的严重程度排序
 - 每个问题必须带文件/行号、影响、建议修复方向
-- 最后必须给出以下表格，每项只能判定 `PASS` / `BLOCK` / `WAIVER` / `N/A`
+- 每项只能判定 `PASS` / `BLOCK` / `WAIVER` / `N/A`
