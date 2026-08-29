@@ -1,6 +1,12 @@
 spring:
   application:
     name: customer-agent
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cs
+    username: acm
+    password: Qwerty123!
+  flyway:
+    enabled: true
   ai:
     openai:
       api-key: ${DASHSCOPE_API_KEY}
@@ -9,12 +15,6 @@ spring:
         model: qwen-plus
         options:
           temperature: 0.7
-  http:
-    serviceclient:
-      customer-svc:
-        base-url: lb://customer-svc
-        connect-timeout: 1s
-        read-timeout: 3s
 
 server:
   port: 8010
@@ -39,23 +39,9 @@ logging:
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
-resilience4j:
-  circuitbreaker:
-    instances:
-      customer-svc:
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
-  retry:
-    instances:
-      customer-svc:
-        max-attempts: 3
-        wait-duration: 200ms
-        ignore-exceptions:
-          - io.github.resilience4j.circuitbreaker.CallNotPermittedException
-
 customer:
+  adapters:
+    ai-agent: real
   agent:
     default-system-prompt: |
       你是一个友好专业的电商平台客服助手。你的职责是根据提供的对话历史、订单信息和知识库内容，准确回答客户的问题。

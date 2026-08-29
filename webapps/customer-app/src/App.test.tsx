@@ -3,16 +3,16 @@ import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import App from "@/App"
-import * as customerSvc from "@/services/customer-svc"
-import type { BackendConversation, BackendMessage, MessageThread } from "@/services/customer-svc"
+import * as customerSvc from "@/services/customer-agent"
+import type { BackendConversation, BackendMessage, MessageThread } from "@/services/customer-agent"
 
-vi.mock("@/services/customer-svc", async (importOriginal) => {
+vi.mock("@/services/customer-agent", async (importOriginal) => {
   const actual = await importOriginal<typeof customerSvc>()
   return {
     ...actual,
     createConversation: vi.fn(),
     fetchQuickQuestions: vi.fn(),
-    sendMessage: vi.fn(),
+    streamAssistantReply: vi.fn(),
     endConversation: vi.fn(),
     submitFeedback: vi.fn(),
   }
@@ -61,7 +61,7 @@ describe("App", () => {
       { id: 1, sortOrder: 1, questionText: "怎么查询订单进度？" },
       { id: 2, sortOrder: 2, questionText: "如何申请退款？" },
     ])
-    mockedCustomerSvc.sendMessage.mockResolvedValue(
+    mockedCustomerSvc.streamAssistantReply.mockResolvedValue(
       thread([
         backendMessage({ content: "怎么查询订单进度？" }),
         backendMessage({ id: 2, seqNo: 2, role: "AGENT", content: "你可以在「我的订单」中查看最新进度。" }),
@@ -81,7 +81,11 @@ describe("App", () => {
     const quickQuestion = await screen.findByRole("button", { name: "怎么查询订单进度？" })
     fireEvent.click(quickQuestion)
 
-    expect(mockedCustomerSvc.sendMessage).toHaveBeenCalledWith("CON-TEST-1", "怎么查询订单进度？")
+    expect(mockedCustomerSvc.streamAssistantReply).toHaveBeenCalledWith(
+      "CON-TEST-1",
+      "怎么查询订单进度？",
+      expect.any(Function),
+    )
 
     await waitFor(() => {
       expect(screen.getByText("你可以在「我的订单」中查看最新进度。")).toBeInTheDocument()
@@ -89,11 +93,48 @@ describe("App", () => {
     expect(screen.queryByRole("status", { name: "客服正在输入" })).not.toBeInTheDocument()
   })
 
+  it("renders streamed tokens before replacing them with the persisted reply", async () => {
+    mockedCustomerSvc.createConversation.mockResolvedValue(activeConversation())
+    mockedCustomerSvc.fetchQuickQuestions.mockResolvedValue([])
+    mockedCustomerSvc.streamAssistantReply.mockImplementation(
+      (_conversationNo, _content, onChunk) => {
+        onChunk("您好，正在为您")
+        return Promise.resolve(
+          thread([
+            backendMessage({ content: "你好" }),
+            backendMessage({ id: 2, seqNo: 2, role: "AGENT", content: "您好，正在为您查询订单。" }),
+          ]),
+        )
+      },
+    )
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(mockedCustomerSvc.createConversation).toHaveBeenCalled()
+    })
+
+    fireEvent.change(screen.getByPlaceholderText("请输入你想咨询的问题…"), {
+      target: { value: "你好" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "发送消息" }))
+
+    await waitFor(() => {
+      expect(screen.getByText("您好，正在为您")).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText("您好，正在为您查询订单。")).toBeInTheDocument()
+    })
+    expect(screen.queryByText("您好，正在为您")).not.toBeInTheDocument()
+    expect(screen.queryByRole("status", { name: "客服正在输入" })).not.toBeInTheDocument()
+  })
+
   it("shows the typing indicator while waiting for the agent reply", async () => {
     mockedCustomerSvc.createConversation.mockResolvedValue(activeConversation())
     mockedCustomerSvc.fetchQuickQuestions.mockResolvedValue([])
     let resolveReply: (value: MessageThread) => void = () => {}
-    mockedCustomerSvc.sendMessage.mockImplementation(
+    mockedCustomerSvc.streamAssistantReply.mockImplementation(
       () =>
         new Promise<MessageThread>((resolve) => {
           resolveReply = resolve
@@ -131,7 +172,7 @@ describe("App", () => {
   it("rolls back the optimistic message when the send fails", async () => {
     mockedCustomerSvc.createConversation.mockResolvedValue(activeConversation())
     mockedCustomerSvc.fetchQuickQuestions.mockResolvedValue([])
-    mockedCustomerSvc.sendMessage.mockRejectedValue(
+    mockedCustomerSvc.streamAssistantReply.mockRejectedValue(
       new customerSvc.CustomerServiceError("Mock AI Agent configured to fail", "EXTERNAL_DEPENDENCY_FAILED", 502),
     )
 

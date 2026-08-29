@@ -85,6 +85,13 @@ public class GlobalExceptionHandler {
   private static HttpStatus httpStatusFor(String code) {
     return switch (code) {
       case "INVALID_REQUEST" -> HttpStatus.BAD_REQUEST;
+      case "CONVERSATION_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+      case "CONVERSATION_NOT_ACTIVE",
+          "CONVERSATION_STATE_CONFLICT",
+          "FEEDBACK_ALREADY_SUBMITTED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "CONVERSATION_CONCURRENTLY_MODIFIED",
+          "MOCK_ADAPTER_INACTIVE" -> HttpStatus.CONFLICT;
       case "LLM_UNAVAILABLE", "EXTERNAL_DEPENDENCY_FAILED" -> HttpStatus.BAD_GATEWAY;
       default ->
           throw new IllegalStateException(

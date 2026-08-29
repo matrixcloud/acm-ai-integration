@@ -116,8 +116,6 @@ tasks:
       - task: boot
         vars: { SVC: customer-agent }
       - task: boot
-        vars: { SVC: customer-svc }
-      - task: boot
         vars: { SVC: order-svc }
       - task: boot
         vars: { SVC: kb-svc }

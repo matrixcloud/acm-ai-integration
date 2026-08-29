@@ -4,7 +4,7 @@
 
 - 模块：`customer-svc`
 - 日期：2026-08-29
-- 状态：待确认
+- 状态：已取代——模块已并入 `customer-agent`，见 `2026-08-30-customer-agent-merge.md`
 - 目标：为终端客户提供演示级在线客服能力，覆盖会话生命周期、消息收发、会话评价、快捷问题和订单上下文联动
 - 技术基础：Spring Boot 4.1.1、Spring MVC、Spring Data JPA、Flyway、PostgreSQL、MapStruct、Lombok
 

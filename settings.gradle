@@ -25,7 +25,6 @@ dependencyResolutionManagement {
 rootProject.name = 'acm-ai-integration'
 
 include 'customer-agent'
-include 'customer-svc'
 include 'order-svc'
 include 'kb-svc'
 include 'registry-svc'

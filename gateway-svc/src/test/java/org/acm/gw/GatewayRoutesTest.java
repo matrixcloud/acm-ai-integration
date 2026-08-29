@@ -22,7 +22,7 @@ class GatewayRoutesTest {
 			.block();
 
 		assertThat(routes).extracting(RouteDefinition::getId).containsExactlyInAnyOrder(
-			"customer-svc", "order-svc", "kb-svc", "customer-agent");
+			"customer-agent", "order-svc", "kb-svc");
 
 		assertThat(routes).allSatisfy(route -> assertThat(route.getFilters()).anySatisfy(filter -> {
 			assertThat(filter.getName()).isEqualTo("StripPrefix");

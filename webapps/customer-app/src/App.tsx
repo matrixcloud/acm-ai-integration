@@ -21,13 +21,13 @@ import {
   createConversation,
   endConversation,
   fetchQuickQuestions,
-  sendMessage,
+  streamAssistantReply,
   submitFeedback,
   toChatMessage,
   toConversationStatus,
   toFeedbackRating,
   type QuickQuestion,
-} from "@/services/customer-svc"
+} from "@/services/customer-agent"
 import type {
   ChatMessage as ChatMessageType,
   ConversationStatus,
@@ -70,6 +70,7 @@ function App() {
   const [status, setStatus] = useState<ConversationStatus>("active")
   const [rating, setRating] = useState<FeedbackRating | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [streamingReply, setStreamingReply] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isMountedRef = useRef(true)
   const conversationInitiatedRef = useRef(false)
@@ -126,7 +127,10 @@ function App() {
     setError(null)
 
     try {
-      const thread = await sendMessage(conversationNo, content)
+      const thread = await streamAssistantReply(conversationNo, content, (token) => {
+        if (!isMountedRef.current) return
+        setStreamingReply((current) => (current ?? "") + token)
+      })
       if (!isMountedRef.current) return
       setMessages([...INITIAL_MESSAGES, ...thread.messages.map(toChatMessage)])
       setStatus("active")
@@ -139,6 +143,8 @@ function App() {
         cause instanceof CustomerServiceError ? cause.message : "消息发送失败，请稍后重试",
       )
       setStatus("active")
+    } finally {
+      setStreamingReply(null)
     }
   }
 
@@ -296,7 +302,18 @@ function App() {
                 {messages.map((message) => (
                   <ChatMessage key={message.id} message={message} />
                 ))}
-                {status === "responding" && <TypingIndicator />}
+                {status === "responding" && streamingReply === null && <TypingIndicator />}
+                {streamingReply !== null && (
+                  <ChatMessage
+                    key="streaming-reply"
+                    message={{
+                      id: "streaming-reply",
+                      role: "support",
+                      content: streamingReply,
+                      createdAt: new Date(),
+                    }}
+                  />
+                )}
               </div>
 
               {!hasCustomerMessage && status === "active" && quickQuestions.length > 0 && (

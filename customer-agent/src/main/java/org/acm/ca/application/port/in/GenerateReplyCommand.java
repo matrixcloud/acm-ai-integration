@@ -5,8 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Reply-generation command, mirroring the {@code AiAgentClient.ReplyRequest} contract owned by
- * {@code customer-svc}. {@code role} is a plain string because it arrives as JSON.
+ * Reply-generation command for the agent use case. The in-process {@code AiAgentClient} adapter
+ * maps {@code AiAgentClient.ReplyRequest} onto this record; the SSE endpoint maps JSON directly.
+ * {@code role} is a plain string because it arrives as JSON.
  */
 public record GenerateReplyCommand(
     String conversationNo,

@@ -6,10 +6,10 @@ spring:
       server:
         webflux:
           routes:
-            - id: customer-svc
-              uri: lb://customer-svc
+            - id: customer-agent
+              uri: lb://customer-agent
               predicates:
-                - Path=/api/customer/**
+                - Path=/api/customer/**,/api/agent/**
               filters:
                 - StripPrefix=2
             - id: order-svc
@@ -22,12 +22,6 @@ spring:
               uri: lb://kb-svc
               predicates:
                 - Path=/api/kb/**
-              filters:
-                - StripPrefix=2
-            - id: customer-agent
-              uri: lb://customer-agent
-              predicates:
-                - Path=/api/agent/**
               filters:
                 - StripPrefix=2
 

@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-/** Exposes the SSE reply endpoint. Streams on a separate thread so the request thread returns immediately. */
+/**
+ * Exposes the agent-native SSE reply endpoint. Streams on a separate thread so the request thread
+ * returns immediately. The path follows the gateway convention: {@code /api/agent/**} is stripped
+ * to {@code /agent/**} by the gateway's {@code StripPrefix=2} filter.
+ */
 @RestController
 public class AgentController {
 
@@ -23,13 +27,13 @@ public class AgentController {
   public AgentController(
       AgentUseCase agentUseCase,
       AgentRequestMapper mapper,
-      @Qualifier("agentExecutor") Executor executor) {
+      @Qualifier("sseExecutor") Executor executor) {
     this.agentUseCase = agentUseCase;
     this.mapper = mapper;
     this.executor = executor;
   }
 
-  @PostMapping(value = "/api/agent/reply", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @PostMapping(value = "/agent/reply", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   SseEmitter reply(@Valid @RequestBody AgentReplyRequest request) {
     SseEmitter emitter = new SseEmitter(30_000L);
     executor.execute(

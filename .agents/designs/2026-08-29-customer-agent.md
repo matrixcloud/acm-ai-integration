@@ -4,7 +4,7 @@
 
 - 模块：`customer-agent`
 - 日期：2026-08-29
-- 状态：待确认
+- 状态：已取代——`customer-svc` 已并入本模块，见 `2026-08-30-customer-agent-merge.md`；混合范式（§7-§12）继续有效
 - 目标：为 `customer-svc` 提供 AI 回复生成能力，采用混合范式（规则路由 + ReAct Tool Calling），覆盖订单上下文回复、知识库 RAG 回复和兜底回复
 - 技术基础：Spring Boot 4.1.1、Spring AI 2.0.x（ChatClient + ToolCallingAdvisor + stream）、Spring MVC（SSE 流式响应）、Lombok
 
