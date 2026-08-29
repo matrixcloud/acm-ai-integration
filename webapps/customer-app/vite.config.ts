@@ -11,6 +11,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/conversations": "http://localhost:8080",
+      "/quick-questions": "http://localhost:8080",
+      "/mock": "http://localhost:8080",
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",

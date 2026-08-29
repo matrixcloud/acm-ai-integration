@@ -6,7 +6,7 @@ import {
   Sparkles,
   Stars,
 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ChatComposer, type ComposerMode } from "@/components/chat/chat-composer"
 import { ChatMessage } from "@/components/chat/chat-message"
@@ -15,9 +15,24 @@ import { SupportAvatar } from "@/components/chat/support-avatar"
 import { TypingIndicator } from "@/components/chat/typing-indicator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { INITIAL_MESSAGES, QUICK_QUESTIONS } from "@/data/mock-chat"
-import { getMockReply } from "@/services/mock-support-service"
-import type { ChatMessage as ChatMessageType, ConversationStatus, FeedbackRating } from "@/types/chat"
+import { INITIAL_MESSAGES } from "@/data/mock-chat"
+import {
+  CustomerServiceError,
+  createConversation,
+  endConversation,
+  fetchQuickQuestions,
+  sendMessage,
+  submitFeedback,
+  toChatMessage,
+  toConversationStatus,
+  toFeedbackRating,
+  type QuickQuestion,
+} from "@/services/customer-svc"
+import type {
+  ChatMessage as ChatMessageType,
+  ConversationStatus,
+  FeedbackRating,
+} from "@/types/chat"
 
 const SERVICE_FEATURES = [
   {
@@ -50,56 +65,129 @@ function createMessage(role: ChatMessageType["role"], content: string): ChatMess
 
 function App() {
   const [messages, setMessages] = useState<ChatMessageType[]>(INITIAL_MESSAGES)
+  const [quickQuestions, setQuickQuestions] = useState<QuickQuestion[]>([])
+  const [conversationNo, setConversationNo] = useState<string | null>(null)
   const [status, setStatus] = useState<ConversationStatus>("active")
   const [rating, setRating] = useState<FeedbackRating | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isMountedRef = useRef(true)
+  const conversationInitiatedRef = useRef(false)
+
+  const openConversation = useCallback(async () => {
+    try {
+      const conversation = await createConversation("customer-001")
+      if (!isMountedRef.current) return
+      setConversationNo(conversation.conversationNo)
+      setMessages([...INITIAL_MESSAGES, ...conversation.messages.map(toChatMessage)])
+    } catch (cause) {
+      if (!isMountedRef.current) return
+      setError(
+        cause instanceof CustomerServiceError ? cause.message : "无法连接客服服务，请稍后重试",
+      )
+      setStatus("ended")
+    }
+  }, [])
 
   useEffect(() => {
     isMountedRef.current = true
 
+    // React StrictMode runs effects twice (mount -> cleanup -> mount) on the same instance and
+    // refs survive the remount, so this guard skips the second setup instead of posting a
+    // duplicate createConversation that would leave an orphan ACTIVE conversation on the backend.
+    if (conversationInitiatedRef.current) return
+    conversationInitiatedRef.current = true
+
+    void Promise.all([openConversation(), fetchQuickQuestions()])
+      .then(([, questions]) => {
+        if (isMountedRef.current) setQuickQuestions(questions)
+      })
+      .catch(() => {
+        if (isMountedRef.current) setError("无法加载快捷问题")
+      })
+
     return () => {
       isMountedRef.current = false
     }
-  }, [])
+  }, [openConversation])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
   }, [messages, status])
 
   const handleSend = async (content: string) => {
-    if (status !== "active") {
+    if (status !== "active" || !conversationNo) {
       throw new Error(`会话状态为 ${status}，无法发送消息`)
     }
 
-    setMessages((currentMessages) => [...currentMessages, createMessage("customer", content)])
+    const optimistic = createMessage("customer", content)
+    setMessages((currentMessages) => [...currentMessages, optimistic])
     setStatus("responding")
+    setError(null)
 
-    const reply = await getMockReply(content)
-    if (!isMountedRef.current) return
-
-    setMessages((currentMessages) => [...currentMessages, createMessage("support", reply)])
-    setStatus("active")
+    try {
+      const thread = await sendMessage(conversationNo, content)
+      if (!isMountedRef.current) return
+      setMessages([...INITIAL_MESSAGES, ...thread.messages.map(toChatMessage)])
+      setStatus("active")
+    } catch (cause) {
+      if (!isMountedRef.current) return
+      setMessages((currentMessages) =>
+        currentMessages.filter((message) => message.id !== optimistic.id),
+      )
+      setError(
+        cause instanceof CustomerServiceError ? cause.message : "消息发送失败，请稍后重试",
+      )
+      setStatus("active")
+    }
   }
 
-  const handleEndConversation = () => {
-    if (status !== "active") {
+  const handleEndConversation = async () => {
+    if (status !== "active" || !conversationNo) {
       throw new Error(`会话状态为 ${status}，无法结束咨询`)
     }
-    setStatus("awaiting-feedback")
+    setError(null)
+
+    try {
+      const conversation = await endConversation(conversationNo)
+      if (!isMountedRef.current) return
+      setStatus(toConversationStatus(conversation.status))
+    } catch (cause) {
+      if (!isMountedRef.current) return
+      setError(
+        cause instanceof CustomerServiceError ? cause.message : "结束会话失败，请稍后重试",
+      )
+    }
   }
 
-  const handleRate = (nextRating: FeedbackRating) => {
-    if (status !== "awaiting-feedback") {
+  const handleRate = async (nextRating: FeedbackRating) => {
+    if (status !== "awaiting-feedback" || !conversationNo) {
       throw new Error(`会话状态为 ${status}，无法提交评价`)
     }
-    setRating(nextRating)
-    setStatus("ended")
+    setError(null)
+
+    try {
+      const conversation = await submitFeedback(conversationNo, nextRating)
+      if (!isMountedRef.current) return
+      setRating(
+        toFeedbackRating(
+          conversation.feedback?.rating ??
+            (nextRating === "satisfied" ? "SATISFIED" : "DISSATISFIED"),
+        ),
+      )
+      setStatus("ended")
+    } catch (cause) {
+      if (!isMountedRef.current) return
+      setError(
+        cause instanceof CustomerServiceError ? cause.message : "提交评价失败，请稍后重试",
+      )
+    }
   }
 
   const isConversationOpen = status === "active" || status === "responding"
   const hasCustomerMessage = messages.some((message) => message.role === "customer")
   const composerMode = COMPOSER_MODE_BY_STATUS[status]
+  const showFeedback = conversationNo !== null && (status === "awaiting-feedback" || status === "ended")
 
   return (
     <main className="relative flex min-h-svh items-center justify-center overflow-hidden bg-page px-0 py-0 md:px-6 md:py-8">
@@ -153,7 +241,7 @@ function App() {
 
           <div className="relative z-10 flex items-center gap-2 text-xs text-white/45">
             <BadgeCheck aria-hidden="true" className="size-4 text-emerald-300" />
-            当前为前端 Mock 演示环境
+            已接入真实客服服务
           </div>
         </aside>
 
@@ -181,7 +269,7 @@ function App() {
             {isConversationOpen && (
               <Button
                 disabled={status === "responding"}
-                onClick={handleEndConversation}
+                onClick={() => void handleEndConversation()}
                 size="sm"
                 variant="ghost"
               >
@@ -198,6 +286,12 @@ function App() {
                 <span className="h-px flex-1 bg-border" />
               </div>
 
+              {error && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-5">
                 {messages.map((message) => (
                   <ChatMessage key={message.id} message={message} />
@@ -205,30 +299,30 @@ function App() {
                 {status === "responding" && <TypingIndicator />}
               </div>
 
-              {!hasCustomerMessage && status === "active" && (
+              {!hasCustomerMessage && status === "active" && quickQuestions.length > 0 && (
                 <div className="mt-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Stars aria-hidden="true" className="size-3.5 text-coral" />
                     你可能想问
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {QUICK_QUESTIONS.map((question) => (
+                    {quickQuestions.map((question) => (
                       <Button
                         className="h-auto justify-start rounded-xl py-2.5 text-left font-normal"
-                        key={question}
-                        onClick={() => void handleSend(question)}
+                        key={question.id}
+                        onClick={() => void handleSend(question.questionText)}
                         variant="outline"
                       >
-                        {question}
+                        {question.questionText}
                       </Button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {(status === "awaiting-feedback" || status === "ended") && (
+              {showFeedback && (
                 <div className="mt-7 animate-in fade-in slide-in-from-bottom-2">
-                  <FeedbackCard onRate={handleRate} rating={rating} />
+                  <FeedbackCard onRate={(next) => void handleRate(next)} rating={rating} />
                 </div>
               )}
               <div ref={messagesEndRef} />
