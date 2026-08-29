@@ -32,7 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
  * REST controller for knowledge-base management, document upload, and similarity search.
  */
 @RestController
-@RequestMapping("/api/kbs")
+@RequestMapping("/kbs")
 @RequiredArgsConstructor
 public class KbController {
 

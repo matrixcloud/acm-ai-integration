@@ -107,8 +107,12 @@ tasks:
       - ./gradlew :{{.SVC}}:bootRun
 
   run-all:
-    desc: "并行运行所有 Spring Boot 服务"
+    desc: "并行运行所有 Spring Boot 服务（注册中心未就绪时各服务自动重试注册）"
     deps:
+      - task: boot
+        vars: { SVC: registry-svc }
+      - task: boot
+        vars: { SVC: gateway-svc }
       - task: boot
         vars: { SVC: customer-agent }
       - task: boot

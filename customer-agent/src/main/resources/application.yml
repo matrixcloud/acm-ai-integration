@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: customer-agent
+  http:
+    serviceclient:
+      customer-svc:
+        base-url: lb://customer-svc
+        connect-timeout: 1s
+        read-timeout: 3s
+
+server:
+  port: 8010
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761}/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      customer-svc:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+  retry:
+    instances:
+      customer-svc:
+        max-attempts: 3
+        wait-duration: 200ms
+        ignore-exceptions:
+          - io.github.resilience4j.circuitbreaker.CallNotPermittedException

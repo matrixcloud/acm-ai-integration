@@ -4,13 +4,32 @@ spring:
   profiles:
     active: demo
   datasource:
-    url: jdbc:postgresql://localhost:5432/acm
+    url: jdbc:postgresql://localhost:5432/order
     username: acm
     password: Qwerty123!
   flyway:
     enabled: true
   jpa:
     open-in-view: false
+
+server:
+  port: 8020
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761}/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
 order:
   adapters:

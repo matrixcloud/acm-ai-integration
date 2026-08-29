@@ -13,9 +13,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/conversations": "http://localhost:8080",
-      "/quick-questions": "http://localhost:8080",
-      "/mock": "http://localhost:8080",
+      "/api": "http://localhost:8080",
     },
   },
   test: {

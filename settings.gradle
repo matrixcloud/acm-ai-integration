@@ -28,5 +28,7 @@ include 'customer-agent'
 include 'customer-svc'
 include 'order-svc'
 include 'kb-svc'
+include 'registry-svc'
+include 'gateway-svc'
 
 include 'common-lib'

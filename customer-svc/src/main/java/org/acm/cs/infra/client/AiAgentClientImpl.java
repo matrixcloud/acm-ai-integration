@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.acm.cs.application.port.out.AiAgentClient;
 import org.acm.cs.application.port.out.AiAgentUnavailableException;
 import org.acm.cs.application.port.out.OrderQueryClient.OrderSummary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**

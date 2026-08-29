@@ -1,10 +1,10 @@
-package org.acm.ca;
+package org.acm.rg;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties = "eureka.client.enabled=false")
-class CustomerAgentApplicationTests {
+@SpringBootTest
+class RegistrySvcApplicationTests {
 
 	@Test
 	void contextLoads() {

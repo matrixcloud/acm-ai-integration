@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for evaluation test-suite management and batch evaluation runs.
  */
 @RestController
-@RequestMapping("/api/eval")
+@RequestMapping("/eval")
 @RequiredArgsConstructor
 public class EvalController {
 

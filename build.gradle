@@ -8,7 +8,17 @@ allprojects {
 }
 
 subprojects {
-    pluginManager.withPlugin('org.springframework.boot') {
+	pluginManager.withPlugin('io.spring.dependency-management') {
+		dependencyManagement {
+			imports {
+				mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.1.3"
+				// SC BOM 传递 resilience4j-bom 2.3.0, 后置导入覆盖, 与 resilience4j-spring-boot4 2.4.0 对齐
+				mavenBom "io.github.resilience4j:resilience4j-bom:2.4.0"
+			}
+		}
+	}
+
+	pluginManager.withPlugin('org.springframework.boot') {
         tasks.named('bootBuildImage') {
             imageName = "acm/${project.name}:${project.version}"
             tags = ["acm/${project.name}:latest"]

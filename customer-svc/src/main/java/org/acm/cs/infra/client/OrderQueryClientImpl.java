@@ -8,14 +8,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.acm.cs.application.port.out.OrderQueryClient;
 import org.acm.cs.application.port.out.OrderQueryUnavailableException;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
  * In-memory Mock implementation of {@link OrderQueryClient} (design §11.1).
  *
- * <p>Registered only under the {@code demo} profile: outside demo, a real adapter must be
- * provided or the application fails to start (design §11.2, §17).
+ * <p>Registered unconditionally; a real adapter must replace it once order-svc HTTP
+ * integration is introduced.
  */
 @Component
 public class OrderQueryClientImpl implements OrderQueryClient {
