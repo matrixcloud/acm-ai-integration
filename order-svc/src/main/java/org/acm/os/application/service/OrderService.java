@@ -68,10 +68,10 @@ public class OrderService implements OrderUseCase {
     IdempotencyService.IdempotentOperation<Order> operation =
         new IdempotencyService.IdempotentOperation<>(
             CREATE_OPERATION, idempotencyKey, command, Order.class);
-    return idempotencyService.execute(operation, () -> createInternal(command));
+    return idempotencyService.execute(operation, () -> createInternal(command, idempotencyKey));
   }
 
-  private Order createInternal(CreateOrderCommand command) {
+  private Order createInternal(CreateOrderCommand command, String idempotencyKey) {
     List<OrderItem> items = enrichOrderItems(command.getCurrency(), command.getItems());
     Order order =
         Order.create(
@@ -90,7 +90,8 @@ public class OrderService implements OrderUseCase {
         order.getItems().stream()
             .map(item -> new InventoryItem(item.getSkuId(), item.getQuantity()))
             .toList();
-    String reservationId = inventoryClient.reserve(orderNo, inventoryItems, orderNo).reservationId();
+    String reservationId =
+        inventoryClient.reserve(orderNo, inventoryItems, idempotencyKey).reservationId();
     order.setInventoryReservationId(reservationId);
 
     try {
@@ -99,7 +100,7 @@ public class OrderService implements OrderUseCase {
       return orderRepository.saveAndFlush(order);
     } catch (RuntimeException e) {
       try {
-        inventoryClient.release(reservationId, orderNo);
+        inventoryClient.release(reservationId, idempotencyKey);
       } catch (RuntimeException releaseFailure) {
         // Never mask the original persistence failure with a compensation failure.
         log.error(

@@ -19,6 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @param orderNo system-generated order number
    * @return the order with its items, or empty if not found
    */
+  @EntityGraph(attributePaths = "items")
   Optional<Order> findByOrderNo(String orderNo);
 
   /** Fetches orders with their items so adapters can map outside a persistence session. */
