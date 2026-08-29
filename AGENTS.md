@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ACM AI Integration 是用于展示 AI + 业务的展示的 mono repo
+ACM AI Integration 是一个 AI+业务的 mono repo
 
 ## 全局约束
 

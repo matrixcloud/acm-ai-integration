@@ -132,10 +132,24 @@ tasks:
   # ─────────────────────── 前端 ───────────────────────
 
   web:
-    desc: "启动前端开发服务器（Vite）"
-    dir: "{{.FRONTEND_DIR}}"
+    desc: "启动前端开发服务器（用法: task web APP=kb-app；无参数并行启动全部）"
+    vars:
+      APP: "{{.APP}}"
+    preconditions:
+      - sh: '[ -z "{{.APP}}" ] || [ -d "webapps/{{.APP}}" ]'
+        msg: "未知前端应用: {{.APP}}（应为 webapps 下的目录名）"
     cmds:
-      - pnpm run dev
+      - |
+        if [ -n "{{.APP}}" ]; then
+          cd "webapps/{{.APP}}" && exec pnpm run dev
+        else
+          for dir in webapps/*/; do
+            name=$(basename "$dir")
+            echo ">>> [$name] 启动开发服务器"
+            (cd "$dir" && pnpm run dev) &
+          done
+          wait
+        fi
 
   web:build:
     desc: "构建前端生产包"
