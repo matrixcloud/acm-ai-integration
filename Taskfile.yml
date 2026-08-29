@@ -1,0 +1,131 @@
+version: "3"
+
+vars:
+  FRONTEND_DIR: webapps/customer-app
+
+tasks:
+  default:
+    desc: "列出所有可用任务"
+    cmds:
+      - task --list
+
+  # ─────────────────────── 基础设施 ───────────────────────
+
+  up:
+    desc: "启动 Postgres + Redis（后台）"
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: "停止并移除容器"
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: "查看基础设施日志（前台）"
+    cmds:
+      - docker compose logs -f
+
+  # ─────────────────────── Gradle 构建 ───────────────────────
+
+  build:
+    desc: "构建所有 Gradle 子项目（跳过测试）"
+    cmds:
+      - ./gradlew build -x test {{.CLI_ARGS}}
+
+  test:
+    desc: "运行所有 Gradle 子项目测试"
+    cmds:
+      - ./gradlew test {{.CLI_ARGS}}
+
+  test-svc:
+    desc: "运行单个服务测试（用法: task test-svc SVC=order-svc）"
+    vars:
+      SVC: "{{.SVC}}"
+    preconditions:
+      - sh: 'test -n "{{.SVC}}"'
+        msg: "请指定服务名，例如: task test-svc SVC=order-svc"
+    cmds:
+      - ./gradlew :{{.SVC}}:test
+
+  clean:
+    desc: "清理 Gradle 构建产物"
+    cmds:
+      - ./gradlew clean
+
+  # ─────────────────────── 运行服务 ───────────────────────
+
+  run:
+    desc: "运行单个服务（用法: task run SVC=order-svc）"
+    vars:
+      SVC: "{{.SVC}}"
+    preconditions:
+      - sh: 'test -n "{{.SVC}}"'
+        msg: "请指定服务名，例如: task run SVC=order-svc"
+    cmds:
+      - ./gradlew :{{.SVC}}:bootRun
+
+  run-all:
+    desc: "并行运行所有 Spring Boot 服务"
+    deps:
+      - task: boot
+        vars: { SVC: customer-agent }
+      - task: boot
+        vars: { SVC: customer-svc }
+      - task: boot
+        vars: { SVC: order-svc }
+      - task: boot
+        vars: { SVC: rag-svc }
+
+  boot:
+    internal: true
+    vars:
+      SVC: "{{.SVC}}"
+    cmds:
+      - ./gradlew :{{.SVC}}:bootRun
+
+  # ─────────────────────── 前端 ───────────────────────
+
+  web:
+    desc: "启动前端开发服务器（Vite）"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - pnpm run dev
+
+  web:build:
+    desc: "构建前端生产包"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - pnpm run build
+
+  web:test:
+    desc: "运行前端测试（Vitest）"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - pnpm run test
+
+  web:lint:
+    desc: "前端 ESLint 检查"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - pnpm run lint
+
+  web:install:
+    desc: "安装前端依赖"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - pnpm install
+
+  # ─────────────────────── 一站式工作流 ───────────────────────
+
+  check:
+    desc: "全量检查：后端 test + 前端 lint + 前端 test"
+    cmds:
+      - ./gradlew test
+      - task: web:lint
+      - task: web:test
+
+  fresh:
+    desc: "清理后全量构建 + 测试"
+    cmds:
+      - ./gradlew clean build
