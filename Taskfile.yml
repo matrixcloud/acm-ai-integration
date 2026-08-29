@@ -53,6 +53,47 @@ tasks:
     cmds:
       - ./gradlew clean
 
+  # ─────────────────────── 镜像构建 ───────────────────────
+
+  build-image:
+    desc: "构建单个应用镜像（Spring 服务用模块名如 SVC=order-svc，前端用 webapps 目录名如 SVC=customer-app）"
+    vars:
+      SVC: "{{.SVC}}"
+    preconditions:
+      - sh: 'test -n "{{.SVC}}"'
+        msg: "请指定应用名，例如: task build-image SVC=order-svc"
+      - sh: '[ -d "webapps/{{.SVC}}" ] || [ -d "{{.SVC}}" ]'
+        msg: "未知应用: {{.SVC}}（Spring 服务用模块名，前端用 webapps 下的目录名）"
+    cmds:
+      - |
+        if [ -d "webapps/{{.SVC}}" ]; then
+          ver=$(node -p "require('./webapps/{{.SVC}}/package.json').version")
+          docker build \
+            -f webapps/Dockerfile \
+            --build-arg "APP={{.SVC}}" \
+            -t "acm/{{.SVC}}:$ver" \
+            -t "acm/{{.SVC}}:latest" \
+            webapps
+        else
+          ./gradlew :{{.SVC}}:bootBuildImage
+        fi
+
+  build-all-images:
+    desc: "构建全部应用镜像（所有 Spring 服务 + webapps 下所有前端）"
+    cmds:
+      - ./gradlew bootBuildImage --parallel
+      - |
+        for dir in webapps/*/; do
+          name=$(basename "$dir")
+          ver=$(node -p "require('./$dir/package.json').version")
+          docker build \
+            -f webapps/Dockerfile \
+            --build-arg "APP=$name" \
+            -t "acm/$name:$ver" \
+            -t "acm/$name:latest" \
+            webapps
+        done
+
   # ─────────────────────── 运行服务 ───────────────────────
 
   run:

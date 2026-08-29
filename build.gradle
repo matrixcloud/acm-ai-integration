@@ -8,6 +8,17 @@ allprojects {
 }
 
 subprojects {
+    pluginManager.withPlugin('org.springframework.boot') {
+        tasks.named('bootBuildImage') {
+            imageName = "acm/${project.name}:${project.version}"
+            tags = ["acm/${project.name}:latest"]
+            environment = ["BP_JVM_VERSION": "17"]
+            builder = "docker.m.daocloud.io/paketobuildpacks/builder-noble-java-tiny:latest"
+            // run image 版本须与 builder 元数据中的 stack runImage 一致
+            runImage = "docker.m.daocloud.io/paketobuildpacks/ubuntu-noble-run-tiny:0.0.122"
+        }
+    }
+
     pluginManager.withPlugin('java') {
         java {
             toolchain {
