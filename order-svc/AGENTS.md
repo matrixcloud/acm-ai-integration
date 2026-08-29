@@ -2,12 +2,6 @@
 
 order-svc 是订单微服务（bounded context）。技术设计见 `../.agents/designs/2026-08-28-order-management.md`。
 
-## 编码核心原则
-
-- EXPLICIT（显式）：意图透明。消灭魔法值，拒绝隐式约定
-- FAIL-FAST（阻断）：快速失败。异常大声抛出，严禁静默容错
-- NO_GUESS（零脑补）：遇盲区挂起。严禁猜测需求或伪造 API，必须提问
-
 ## 分层架构
 
 依赖方向：`interfaces.http → application.port.in → application.service → domain`；`infra.client → application.port.out`（依赖倒置）；`domain` 不依赖其他层。
@@ -58,5 +52,3 @@ org.acm.os
         ├── exception/                # UnsupportedApiVersionException
         └── GlobalExceptionHandler    # 统一 Problem Details (RFC 9457) 映射
 ```
-
-规划中的后续用例落点：Payment / Refund / Shipment 聚合、PaymentClient / LogisticsClient 端口及 Mock 适配器。
