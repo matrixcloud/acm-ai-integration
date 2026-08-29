@@ -256,7 +256,7 @@ interface LogisticsClient {
 
 ### 5.5 不改的范围
 
-- 不修改 `customer-svc`、`customer-agent` 和 `rag-svc` 的职责。
+- 不修改 `customer-svc`、`customer-agent` 和 `kb-svc` 的职责。
 - 不在订单数据库中维护商品主数据或可售库存。
 - 不把 Mock API 解释为未来真实外部 API；真实适配器必须单独实现并配置启用。
 

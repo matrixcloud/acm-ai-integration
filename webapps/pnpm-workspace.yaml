@@ -1,0 +1,5 @@
+packages:
+  - customer-app
+  - kb-app
+allowBuilds:
+  esbuild: true

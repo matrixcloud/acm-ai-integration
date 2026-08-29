@@ -75,7 +75,7 @@ tasks:
       - task: boot
         vars: { SVC: order-svc }
       - task: boot
-        vars: { SVC: rag-svc }
+        vars: { SVC: kb-svc }
 
   boot:
     internal: true

@@ -210,7 +210,7 @@ record OrderSummary(
 
 ### 5.5 不改的范围
 
-- 不修改 `order-svc`、`customer-agent` 和 `rag-svc` 的职责。
+- 不修改 `order-svc`、`customer-agent` 和 `kb-svc` 的职责。
 - 不在客服数据库中维护订单主数据。
 - 不把 Mock API 解释为未来真实外部 API；真实适配器必须单独实现并配置启用。
 

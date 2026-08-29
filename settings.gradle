@@ -27,6 +27,6 @@ rootProject.name = 'acm-ai-integration'
 include 'customer-agent'
 include 'customer-svc'
 include 'order-svc'
-include 'rag-svc'
+include 'kb-svc'
 
 include 'common-lib'

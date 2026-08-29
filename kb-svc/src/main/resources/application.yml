@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: kb-svc
+  profiles:
+    active: demo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/acm
+    username: acm
+    password: Qwerty123!
+  flyway:
+    enabled: true
+    table: flyway_schema_history_kb
+    baseline-on-migrate: true
+    baseline-version: 0
+  ai:
+    openai:
+      api-key: ${DASHSCOPE_API_KEY}
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      embedding:
+        model: text-embedding-v4
+        dimensions: 1024
+      chat:
+        model: qwen-plus
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1024
