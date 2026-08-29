@@ -1,0 +1,23 @@
+package org.acm.os.interfaces.http.mapper;
+
+import java.util.List;
+import org.acm.os.interfaces.http.response.CreateOrderResponse;
+import org.acm.os.domain.order.Order;
+import org.mapstruct.Mapper;
+
+/**
+ * Maps domain {@link Order} instances to outbound HTTP response DTOs.
+ *
+ * <p>Lives in the adapter layer — the adapter owns translating domain results back into
+ * transport-level projections. The domain layer never references {@code CreateOrderResponse}.
+ */
+@Mapper(componentModel = "spring")
+public interface OrderResponseMapper {
+  CreateOrderResponse toResponse(Order order);
+
+  List<CreateOrderResponse> toResponseList(List<Order> orders);
+
+  CreateOrderResponse.Item toItem(org.acm.os.domain.order.OrderItem item);
+
+  List<CreateOrderResponse.Item> toItems(List<org.acm.os.domain.order.OrderItem> items);
+}

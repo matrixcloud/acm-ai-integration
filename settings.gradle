@@ -1,7 +1,13 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
+        //国内镜像
+        maven { url = "https://maven.aliyun.com/repository/central" }
+        maven { url = "https://maven.aliyun.com/repository/public" }
+        maven { url = "https://maven.aliyun.com/repository/gradle-plugin" }
+        //官方仓库
+        google()
         mavenCentral()
+        gradlePluginPortal()
     }
     plugins {
         id 'org.springframework.boot' version '4.1.1'
@@ -22,3 +28,5 @@ include 'customer-agent'
 include 'customer-svc'
 include 'order-svc'
 include 'rag-svc'
+
+include 'common-lib'

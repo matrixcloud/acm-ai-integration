@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: order-svc
+  profiles:
+    active: demo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/acm
+    username: acm
+    password: Qwerty123!
+  flyway:
+    enabled: true

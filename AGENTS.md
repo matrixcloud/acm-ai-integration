@@ -7,6 +7,7 @@ ACM AI Integration 是用于展示 AI + 业务的展示的 mono repo
 - 根据使用者的语言，使用的语言相应的语言进行回答
 - 中英文间加空格
 - 讨论设计或问题时优先输出伪代码
+- 如无必要不写代码注释
 
 ## 编码核心原则
 
@@ -21,3 +22,4 @@ ACM AI Integration 是用于展示 AI + 业务的展示的 mono repo
 ## 按需阅读
 
 - 项目架构：./docs/architecture.md
+- 模块设计：./.agents/designs/
