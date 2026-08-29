@@ -7,7 +7,7 @@ import lombok.Data;
 import org.acm.os.application.port.in.query.SearchOrderQuery;
 
 /**
- * HTTP request for {@code GET /orders/search}.
+ * HTTP request for {@code GET /orders}.
  *
  * <p>Flat query-parameter binding (design §9.1: {@code customerId=&status=&page=&size=}); the
  * {@code OrderRequestMapper} translates it into a {@link

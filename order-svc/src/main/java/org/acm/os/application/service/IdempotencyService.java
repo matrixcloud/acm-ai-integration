@@ -4,11 +4,16 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
+import java.util.Map;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 import org.acm.os.application.exception.IdempotencyKeyReuseException;
 import org.acm.os.application.exception.ReservedByConcurrentWriterException;
+import org.acm.os.application.exception.RetryableOperationException;
+import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.domain.shared.InvalidRequestException;
 import org.acm.os.application.idempotency.IdempotencyRecord;
 import org.acm.os.application.idempotency.IdempotencyRecordRepository;
@@ -57,6 +62,33 @@ public class IdempotencyService {
 
   @Transactional
   public <R> R execute(IdempotentOperation<R> operation, Supplier<R> action) {
+    ReservedOperation<R> reserved = reserve(operation);
+    if (reserved.replayedResult() != null) {
+      return reserved.replayedResult();
+    }
+    R result = action.get();
+    reserved.record().complete(toJson(result), null);
+    return result;
+  }
+
+  @Transactional(noRollbackFor = RetryableOperationException.class)
+  public <R> R executeRetryable(IdempotentOperation<R> operation, Supplier<R> action) {
+    ReservedOperation<R> reserved = reserve(operation);
+    if (reserved.replayedResult() != null) {
+      return reserved.replayedResult();
+    }
+    try {
+      R result = action.get();
+      reserved.record().complete(toJson(result), null);
+      return result;
+    } catch (PersistedRetryableFailureException exception) {
+      repository.delete(reserved.record());
+      repository.flush();
+      throw new RetryableOperationException(exception.original());
+    }
+  }
+
+  private <R> ReservedOperation<R> reserve(IdempotentOperation<R> operation) {
     if (operation.idempotencyKey() == null || operation.idempotencyKey().isBlank()) {
       throw new InvalidRequestException("Idempotency key must not be blank");
     }
@@ -64,13 +96,14 @@ public class IdempotencyService {
       throw new InvalidRequestException(
           "Idempotency key exceeds %d characters".formatted(MAX_KEY_LENGTH));
     }
-    String requestHash = hashRequest(toJson(operation.request()));
+    String requestHash = hashRequest(toJson(canonicalize(operation.request())));
 
     Optional<IdempotencyRecord> existing =
         repository.findByOperationAndIdempotencyKey(
             operation.operation(), operation.idempotencyKey());
     if (existing.isPresent()) {
-      return replay(existing.get(), requestHash, operation.responseType());
+      return new ReservedOperation<>(
+          null, replay(existing.get(), requestHash, operation.responseType()));
     }
 
     IdempotencyRecord record =
@@ -93,10 +126,10 @@ public class IdempotencyService {
           e);
     }
 
-    R result = action.get();
-    record.complete(toJson(result), null);
-    return result;
+    return new ReservedOperation<>(record, null);
   }
+
+  private record ReservedOperation<R>(IdempotencyRecord record, R replayedResult) {}
 
   private <R> R replay(IdempotencyRecord record, String requestHash, Class<R> responseType) {
     if (!record.getRequestHash().equals(requestHash)) {
@@ -121,6 +154,23 @@ public class IdempotencyService {
               .formatted(value.getClass().getName(), e.getMessage()),
           e);
     }
+  }
+
+  private static Object canonicalize(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      Map<String, Object> sorted = new TreeMap<>();
+      for (Map.Entry<?, ?> entry : map.entrySet()) {
+        if (!(entry.getKey() instanceof String key)) {
+          throw new IllegalStateException("Idempotency request maps must use string keys");
+        }
+        sorted.put(key, canonicalize(entry.getValue()));
+      }
+      return sorted;
+    }
+    if (value instanceof List<?> list) {
+      return list.stream().map(IdempotencyService::canonicalize).toList();
+    }
+    return value;
   }
 
   /**

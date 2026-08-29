@@ -15,6 +15,7 @@ import org.acm.os.interfaces.http.mapper.OrderResponseMapper;
 import org.acm.os.interfaces.http.request.CreateOrderRequest;
 import org.acm.os.interfaces.http.request.SearchOrderRequest;
 import org.acm.os.interfaces.http.response.CreateOrderResponse;
+import org.acm.os.interfaces.http.response.OrderSummaryResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,13 +62,13 @@ class OrderControllerTest {
     SearchOrderRequest request = new SearchOrderRequest();
     SearchOrderQuery query = new SearchOrderQuery();
     Order order = org.mockito.Mockito.mock(Order.class);
-    CreateOrderResponse response = new CreateOrderResponse();
+    OrderSummaryResponse response = new OrderSummaryResponse();
     when(requestMapper.toQuery(request)).thenReturn(query);
     when(orderUseCase.search(query))
         .thenReturn(new PageImpl<>(List.of(order), PageRequest.of(1, 2), 5));
-    when(responseMapper.toResponseList(List.of(order))).thenReturn(List.of(response));
+    when(responseMapper.toSummaryResponseList(List.of(order))).thenReturn(List.of(response));
 
-    PageResponse<CreateOrderResponse> result = controller.search(request);
+    PageResponse<OrderSummaryResponse> result = controller.search(request);
 
     assertThat(result.getItems()).containsExactly(response);
     assertThat(result.getPage().getNumber()).isEqualTo(1);

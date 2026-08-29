@@ -9,3 +9,12 @@ spring:
     password: Qwerty123!
   flyway:
     enabled: true
+  jpa:
+    open-in-view: false
+
+order:
+  adapters:
+    product: mock
+    inventory: mock
+    payment: mock
+    logistics: mock

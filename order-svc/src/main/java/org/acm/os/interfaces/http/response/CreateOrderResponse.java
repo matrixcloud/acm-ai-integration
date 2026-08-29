@@ -23,6 +23,9 @@ public class CreateOrderResponse {
   private BigDecimal payableTotal;
   private LocalDateTime createdAt;
   private List<Item> items;
+  private List<PaymentResponse> payments;
+  private List<RefundResponse> refunds;
+  private List<ShipmentResponse> shipments;
 
   @Data
   public static class Item {

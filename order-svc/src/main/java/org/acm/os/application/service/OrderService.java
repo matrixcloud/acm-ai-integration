@@ -122,6 +122,21 @@ public class OrderService implements OrderUseCase {
                 query.getCustomerId(), query.getStatus(), pageRequest);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public Order get(String orderNo) {
+    Order order = orderRepository.findByOrderNo(orderNo)
+        .orElseThrow(() -> new org.acm.os.domain.order.OrderNotFoundException(orderNo));
+    initializeDetails(order);
+    return order;
+  }
+
+  private static void initializeDetails(Order order) {
+    order.getPayments().size();
+    order.getRefunds().size();
+    order.getShipments().forEach(shipment -> shipment.getItems().size());
+  }
+
   /**
    * Builds the sort for a search: whitelisted field, {@code DESC} by {@code createdAt} when the
    * client omits the sort. Unknown fields or directions are rejected — never silently ignored.

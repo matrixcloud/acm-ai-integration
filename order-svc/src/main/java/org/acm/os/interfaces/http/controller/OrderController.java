@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ import org.acm.os.interfaces.http.mapper.OrderResponseMapper;
 import org.acm.os.interfaces.http.request.CreateOrderRequest;
 import org.acm.os.interfaces.http.request.SearchOrderRequest;
 import org.acm.os.interfaces.http.response.CreateOrderResponse;
+import org.acm.os.interfaces.http.response.OrderSummaryResponse;
 
 /**
  * REST adapter for order use cases.
@@ -64,11 +66,16 @@ public class OrderController {
    * @return 200 with a page of order summaries
    */
   @GetMapping
-  public PageResponse<CreateOrderResponse> search(@Valid SearchOrderRequest request) {
+  public PageResponse<OrderSummaryResponse> search(@Valid SearchOrderRequest request) {
     Page<Order> result = orderService.search(requestMapper.toQuery(request));
     return new PageResponse<>(
-        responseMapper.toResponseList(result.getContent()),
+        responseMapper.toSummaryResponseList(result.getContent()),
         new PageResponse.Page(
             result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
+  }
+
+  @GetMapping("/{orderNo}")
+  public CreateOrderResponse get(@PathVariable String orderNo) {
+    return responseMapper.toResponse(orderService.get(orderNo));
   }
 }

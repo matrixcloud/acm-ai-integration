@@ -3,6 +3,14 @@ package org.acm.os.interfaces.http.mapper;
 import java.util.List;
 import org.acm.os.interfaces.http.response.CreateOrderResponse;
 import org.acm.os.domain.order.Order;
+import org.acm.os.domain.payment.Payment;
+import org.acm.os.domain.refund.Refund;
+import org.acm.os.domain.shipment.Shipment;
+import org.acm.os.domain.shipment.ShipmentItem;
+import org.acm.os.interfaces.http.response.PaymentResponse;
+import org.acm.os.interfaces.http.response.RefundResponse;
+import org.acm.os.interfaces.http.response.ShipmentResponse;
+import org.acm.os.interfaces.http.response.OrderSummaryResponse;
 import org.mapstruct.Mapper;
 
 /**
@@ -17,7 +25,19 @@ public interface OrderResponseMapper {
 
   List<CreateOrderResponse> toResponseList(List<Order> orders);
 
+  OrderSummaryResponse toSummaryResponse(Order order);
+
+  List<OrderSummaryResponse> toSummaryResponseList(List<Order> orders);
+
   CreateOrderResponse.Item toItem(org.acm.os.domain.order.OrderItem item);
 
   List<CreateOrderResponse.Item> toItems(List<org.acm.os.domain.order.OrderItem> items);
+
+  PaymentResponse toPaymentResponse(Payment payment);
+
+  RefundResponse toRefundResponse(Refund refund);
+
+  ShipmentResponse toShipmentResponse(Shipment shipment);
+
+  ShipmentResponse.Item toShipmentItemResponse(ShipmentItem item);
 }

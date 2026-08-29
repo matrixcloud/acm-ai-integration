@@ -15,6 +15,7 @@ import org.acm.os.application.exception.IdempotencyKeyReuseException;
 import org.acm.os.application.port.out.InsufficientInventoryException;
 import org.acm.os.application.port.out.ProductNotFoundException;
 import org.acm.os.domain.shared.BusinessException;
+import org.acm.os.domain.order.DuplicateSkuException;
 import org.acm.os.domain.shared.InvalidRequestException;
 import org.acm.os.interfaces.http.exception.UnsupportedApiVersionException;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.dao.PessimisticLockingFailureException;
 
 class GlobalExceptionHandlerTest {
 
@@ -90,6 +92,10 @@ class GlobalExceptionHandlerTest {
         HttpStatus.BAD_REQUEST,
         "INVALID_REQUEST");
     assertProblem(
+        handler.handleBusiness(new DuplicateSkuException("duplicate")),
+        HttpStatus.BAD_REQUEST,
+        "DUPLICATE_SKU");
+    assertProblem(
         handler.handleBusiness(new ProductNotFoundException("missing")),
         HttpStatus.NOT_FOUND,
         "PRODUCT_NOT_AVAILABLE");
@@ -112,6 +118,14 @@ class GlobalExceptionHandlerTest {
     assertThatThrownBy(() -> handler.handleBusiness(businessException("UNREGISTERED")))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Business error code 'UNREGISTERED' has no HTTP status mapping");
+  }
+
+  @Test
+  void mapsDatabaseConcurrencyFailure() {
+    ResponseEntity<ProblemDetail> response =
+        handler.handleConcurrency(new PessimisticLockingFailureException("lock timeout"));
+
+    assertProblem(response, HttpStatus.CONFLICT, "ORDER_CONCURRENTLY_MODIFIED");
   }
 
   private static ConstraintViolation<Object> violation(String pathValue, String message) {

@@ -3,8 +3,7 @@ package org.acm.os.domain.order;
 /**
  * Order lifecycle states as defined in the design doc §7.1.
  *
- * <p>Only {@link #PENDING_PAYMENT} is relevant to the create-order use case; the remaining states
- * are declared for completeness and will be exercised by subsequent use cases.
+ * <p>Transitions are owned by {@link Order}; application services must not assign states directly.
  */
 public enum OrderStatus {
   PENDING_PAYMENT,

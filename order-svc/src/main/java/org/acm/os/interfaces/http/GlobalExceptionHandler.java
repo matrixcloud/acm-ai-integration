@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.dao.ConcurrencyFailureException;
 
 /**
  * Maps business and transport exceptions to Problem Details (RFC 9457) responses.
@@ -130,17 +131,28 @@ public class GlobalExceptionHandler {
         .body(problem(status, exception.code(), safeMessage(exception.getMessage())));
   }
 
+  @ExceptionHandler(ConcurrencyFailureException.class)
+  public ResponseEntity<ProblemDetail> handleConcurrency(
+      ConcurrencyFailureException exception) {
+    HttpStatus status = HttpStatus.CONFLICT;
+    return ResponseEntity.status(status)
+        .body(
+            problem(
+                status,
+                "ORDER_CONCURRENTLY_MODIFIED",
+                "Order was concurrently modified; retry the operation"));
+  }
+
   private static HttpStatus httpStatusFor(String code) {
     return switch (code) {
-      case "INVALID_REQUEST" -> HttpStatus.BAD_REQUEST;
+      case "INVALID_REQUEST", "DUPLICATE_SKU" -> HttpStatus.BAD_REQUEST;
       case "PRODUCT_NOT_AVAILABLE", "ORDER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
       case "INSUFFICIENT_INVENTORY",
           "ORDER_STATE_CONFLICT",
           "ORDER_NOT_REFUNDABLE",
           "SHIPMENT_QUANTITY_EXCEEDED",
           "IDEMPOTENCY_KEY_REUSED",
-          "ORDER_CONCURRENTLY_MODIFIED",
-          "DUPLICATE_SKU" -> HttpStatus.CONFLICT;
+          "ORDER_CONCURRENTLY_MODIFIED" -> HttpStatus.CONFLICT;
       case "EXTERNAL_DEPENDENCY_FAILED" -> HttpStatus.BAD_GATEWAY;
       default ->
           throw new IllegalStateException(

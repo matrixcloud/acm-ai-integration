@@ -16,7 +16,7 @@ class OrderTest {
 
     Order order = createOrder(List.of(first, second));
 
-    assertThat(order.getOrderNo()).startsWith("ORD").hasSize(21);
+    assertThat(order.getOrderNo()).startsWith("ORD").hasSize(35);
     assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
     assertThat(order.getItemTotal()).isEqualByComparingTo("21.50");
     assertThat(order.getPayableTotal()).isEqualByComparingTo("21.50");

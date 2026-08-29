@@ -32,6 +32,10 @@ public interface InventoryClient {
    */
   void release(String reservationId, String idempotencyKey);
 
+  void confirm(String reservationId, String idempotencyKey);
+
+  void restore(String orderNo, List<InventoryItem> items, String idempotencyKey);
+
   /** Immutable inventory item for a reservation request. */
   record InventoryItem(String skuId, Integer quantity) {}
 

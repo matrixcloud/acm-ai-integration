@@ -34,4 +34,6 @@ public interface OrderUseCase {
    * @return a page of matching orders
    */
   Page<Order> search(@Valid SearchOrderQuery query);
+
+  Order get(String orderNo);
 }

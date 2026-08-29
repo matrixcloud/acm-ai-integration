@@ -53,4 +53,21 @@ class InventoryClientImplTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Unknown inventory reservation 'missing'");
   }
+
+  @Test
+  void releasedReservationKeyCanBeRetried() {
+    InventoryItem item = new InventoryItem("SKU-001", 1);
+    InventoryReservation first = client.reserve("order-1", List.of(item), "same-key");
+    client.release(first.reservationId(), "release-key");
+
+    InventoryReservation retried = client.reserve("order-1", List.of(item), "same-key");
+
+    assertThat(retried.reservationId()).isNotEqualTo(first.reservationId());
+    client.release(retried.reservationId(), "release-key");
+    assertThat(
+            client.reserve(
+                    "order-2", List.of(new InventoryItem("SKU-001", 100)), "all-stock")
+                .reservationId())
+        .isNotBlank();
+  }
 }
