@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
  * <p>Registered only under the {@code demo} profile: outside demo, a real adapter must be
  * provided or the application fails to start (design §11.2, §17).
  */
-@Profile("demo")
 @Component
 public class OrderQueryClientImpl implements OrderQueryClient {
 

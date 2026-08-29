@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/mock")
-@Profile("demo")
 public class MockController {
 
   private final AiAgentClientImpl aiAgentClient;

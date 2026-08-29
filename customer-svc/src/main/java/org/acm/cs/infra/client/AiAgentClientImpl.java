@@ -12,10 +12,7 @@ import org.springframework.stereotype.Component;
 /**
  * In-memory Mock implementation of {@link AiAgentClient} (design §11.1).
  *
- * <p>Registered only under the {@code demo} profile: outside demo, a real adapter must be
- * provided or the application fails to start (design §11.2, §17).
  */
-@Profile("demo")
 @Component
 public class AiAgentClientImpl implements AiAgentClient {
 

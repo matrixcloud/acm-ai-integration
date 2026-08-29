@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
  * current demo phase.
  */
 @Component
-@Profile("demo")
 public class KbSearchClientImpl implements KbSearchClient {
 
   private final Map<String, String> mockChunks = new ConcurrentHashMap<>();
