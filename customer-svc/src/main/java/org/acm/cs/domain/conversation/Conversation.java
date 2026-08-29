@@ -50,8 +50,8 @@ public final class Conversation extends AuditMetadata {
   @JoinColumn(name = "conversation_id", nullable = false)
   private List<Message> messages = new ArrayList<>();
 
-  @OneToOne(cascade = CascadeType.ALL)
-  @JoinColumn(name = "conversation_id")
+  // Reverse side: the feedback table owns conversation_id (mapped in Feedback.conversation).
+  @OneToOne(mappedBy = "conversation", cascade = CascadeType.ALL)
   private Feedback feedback;
 
   public static Conversation create(String customerId) {
@@ -99,6 +99,7 @@ public final class Conversation extends AuditMetadata {
     newFeedback.setRating(rating);
     newFeedback.setComment(comment);
     newFeedback.setSubmittedAt(LocalDateTime.now());
+    newFeedback.setConversation(this);
     this.feedback = newFeedback;
     this.status = ConversationStatus.ENDED;
   }

@@ -99,9 +99,9 @@ public class IdempotencyService {
       return objectMapper.readValue(record.getResponseBody(), type);
     } catch (JacksonException e) {
       throw new IllegalStateException(
-          "Failed to deserialize cached idempotency response: id=%s, operation='%s', key='%s', "
-              + "targetType=%s. The stored payload no longer matches the current JSON "
-              + "configuration — this record cannot be replayed."
+          ("Failed to deserialize cached idempotency response: id=%s, operation='%s', key='%s', "
+                  + "targetType=%s. The stored payload no longer matches the current JSON "
+                  + "configuration — this record cannot be replayed.")
               .formatted(
                   record.getId(),
                   record.getOperation(),

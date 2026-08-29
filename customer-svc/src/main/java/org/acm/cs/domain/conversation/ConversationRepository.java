@@ -11,8 +11,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
   @EntityGraph(attributePaths = {"messages", "feedback"})
   Optional<Conversation> findByConversationNo(String conversationNo);
 
+  // feedback is an eager reverse-side OneToOne by default; fetch it in the same query
+  // so list/search pages do not issue one extra SELECT per row (N+1).
+  @EntityGraph(attributePaths = "feedback")
   Page<Conversation> findByCustomerId(String customerId, Pageable pageable);
 
+  @EntityGraph(attributePaths = "feedback")
   Page<Conversation> findByCustomerIdAndStatus(
       String customerId, ConversationStatus status, Pageable pageable);
 }
