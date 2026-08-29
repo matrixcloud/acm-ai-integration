@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot'
 	id 'io.spring.dependency-management'
 }
@@ -10,18 +11,76 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-http-client'
 	implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
 	implementation 'org.springframework.boot:spring-boot-restclient'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 	implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+	implementation 'org.mapstruct:mapstruct:1.6.3'
+	implementation platform('org.springframework.ai:spring-ai-bom:2.0.1')
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.aspectj:aspectjweaver'
 	annotationProcessor 'org.projectlombok:lombok'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 	testImplementation 'org.springframework.boot:spring-boot-micrometer-tracing-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+def coverageExclusions = [
+	'org/acm/ca/CustomerAgentApplication*',
+	'**/*MapperImpl*'
+]
+
+def coreCoverageClasses = files(sourceSets.main.output.asFileTree.matching {
+	include 'org/acm/ca/domain/**'
+	include 'org/acm/ca/application/**'
+})
+
+def allCoverageClasses = files(sourceSets.main.output.asFileTree.matching {
+	exclude coverageExclusions
+})
+
+tasks.named('test') {
+	finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+	classDirectories.setFrom(allCoverageClasses)
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn tasks.named('test')
+	classDirectories.setFrom(coreCoverageClasses)
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.85
+			}
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.75
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestCoverageVerification')
 }

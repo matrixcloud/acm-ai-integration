@@ -13,7 +13,7 @@
 1. `customer-svc` 是纯业务编排层，通过出站端口调用 `customer-agent`（生成回复）和 `order-svc`（查询订单上下文）。本期两个出站端口均使用 Mock 适配器，仅在 `demo` Profile 下注册。
 2. 本期只实现 `customer-svc`；`customer-agent` 作为独立 agent 应用，本期不实现真实逻辑，由 Mock 适配器替代。
 3. 一个客户可创建多个会话；每个会话包含多条消息，消息角色为 `CUSTOMER` 或 `AGENT`。
-4. 客户发送消息后，`customer-svc` 同步调用 AI Agent 生成回复，并将客户消息与客服回复在同一响应中返回。前端负责「正在输入」交互态。
+4. 客户发送消息后，`customer-svc` 同步返回 AI 回复，将客户消息与客服回复在同一响应中返回，前端负责「正在输入」交互态。`customer-agent` 仅暴露 SSE 端点，真实 `AiAgentClient` 适配器消费其 SSE 流并聚合为同步 `AgentReply` 返回值；对外同步响应语义不变。
 5. 结束会话后进入待评价状态；客户提交满意度评价后会话才进入已结束状态。已结束或待评价的会话不再接受新消息。
 6. 快捷问题由 `customer-svc` 作为后端参考数据管理，选择快捷问题等价于发送一条客户消息。
 7. 生成 AI 回复时，`customer-svc` 始终通过 `OrderQueryClient` 获取客户近期订单作为上下文传入 AI Agent。这是演示简化，避免意图识别；真实场景可按需引入。
@@ -35,7 +35,7 @@
 - 不实现 `customer-agent` 的真实 AI 回复逻辑。
 - 不实现 `order-svc` 的真实订单查询逻辑。
 - 不实现意图识别、多轮对话记忆、向量检索和 RAG。
-- 不实现异步消息推送、WebSocket 或 SSE。
+- 不实现向终端的异步消息推送、WebSocket 或 SSE 出站。真实 `AiAgentClient` 适配器作为 `customer-agent` SSE 流的消费者聚合其输出（见决策 4），这不是面向终端的出站推送。
 - 不实现人工坐席分配与转接。
 - 不实现身份认证、权限校验和租户隔离。
 - 不实现生产级消息总线和分布式事务。

@@ -1,6 +1,14 @@
 spring:
   application:
     name: customer-agent
+  ai:
+    openai:
+      api-key: ${DASHSCOPE_API_KEY}
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      chat:
+        model: qwen-plus
+        options:
+          temperature: 0.7
   http:
     serviceclient:
       customer-svc:
@@ -22,6 +30,10 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
 
 logging:
   pattern:
@@ -42,3 +54,43 @@ resilience4j:
         wait-duration: 200ms
         ignore-exceptions:
           - io.github.resilience4j.circuitbreaker.CallNotPermittedException
+
+customer:
+  agent:
+    default-system-prompt: |
+      你是一个友好专业的电商平台客服助手。你的职责是根据提供的对话历史、订单信息和知识库内容，准确回答客户的问题。
+
+      你拥有以下工具：
+      - searchKnowledgeBase：搜索知识库获取相关文档内容
+
+      回复要求：
+      1. 回复要简洁、准确、有礼貌
+      2. 对于订单状态、物流等可从已提供订单信息回答的问题，直接回答
+      3. 对于退款政策、退货规则、发票申请等需要查阅知识库的问题，使用 searchKnowledgeBase 工具获取信息后回答
+      4. 如果工具返回错误或无结果，基于已有信息回答或引导客户联系人工客服
+      5. 不要编造不确定的信息
+    kb-no: KB-2026-0001
+    kb-top-k: 5
+    kb-service:
+      base-url: http://localhost:8001
+    rules:
+      - name: ORDER_STATUS
+        keywords: "订单,物流,快递,发货,到哪了,运单"
+        system-prompt: |
+          客户询问订单状态或物流信息。根据提供的订单信息，告知客户最新订单的订单号、状态和应付金额。如果订单已发货，告知预计送达时间。回复要简洁明了。
+        priority: 10
+      - name: REFUND
+        keywords: "退款,退货,退钱"
+        system-prompt: |
+          客户询问退款或退货相关事宜。根据提供的订单信息判断订单状态，引导客户在订单详情页提交退款或退货申请。退款审核通过后将原路退回。回复要简洁明了。
+        priority: 8
+      - name: INVOICE
+        keywords: "发票"
+        system-prompt: |
+          客户询问发票相关事宜。告知客户电子发票会在订单完成后24小时内发送至注册邮箱，可在订单详情页下载。回复要简洁明了。
+        priority: 8
+      - name: HUMAN
+        keywords: "人工,客服,坐席"
+        system-prompt: |
+          客户要求转接人工客服。告知客户已记录转接需求，将尽快安排人工客服跟进。回复要礼貌并安抚客户情绪。
+        priority: 5
