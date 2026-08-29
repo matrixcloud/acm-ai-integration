@@ -22,7 +22,7 @@ description: Use when reviewing changes before commiting
 
 - `PASS`：自查通过，无需讨论
 - `BLOCK`：存在必须修复的问题，修复后才能提交
-- `WAIVER`：仅用于用户明确接受的 workaround，必须同步记录到 `../../notes/tech_debt.md`
+- `WAIVER`：仅用于用户明确接受的 workaround，必须同步记录到 `.agents/notes/tech_debt.md`
 - `N/A`：本次改动不涉及该维度
 
 ## 输出要求
