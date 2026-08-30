@@ -92,7 +92,7 @@ services:
   customer-app:
     image: acm/customer-app:latest
     ports:
-      - "127.0.0.1:3000:80"
+      - "3000:80"
     depends_on:
       gateway-svc:
         condition: service_started
@@ -100,7 +100,7 @@ services:
   kb-app:
     image: acm/kb-app:latest
     ports:
-      - "127.0.0.1:3001:80"
+      - "3001:80"
     depends_on:
       gateway-svc:
         condition: service_started
