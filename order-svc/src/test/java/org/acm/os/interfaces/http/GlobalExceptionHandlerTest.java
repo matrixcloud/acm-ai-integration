@@ -14,11 +14,12 @@ import java.util.Set;
 import org.acm.os.application.exception.IdempotencyKeyReuseException;
 import org.acm.os.application.port.out.InsufficientInventoryException;
 import org.acm.os.application.port.out.ProductNotFoundException;
-import org.acm.os.domain.shared.BusinessException;
 import org.acm.os.domain.order.DuplicateSkuException;
+import org.acm.os.domain.shared.BusinessException;
 import org.acm.os.domain.shared.InvalidRequestException;
 import org.acm.os.interfaces.http.exception.UnsupportedApiVersionException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.dao.PessimisticLockingFailureException;
 
 class GlobalExceptionHandlerTest {
 
@@ -40,8 +40,7 @@ class GlobalExceptionHandlerTest {
     when(exception.getBindingResult()).thenReturn(bindingResult);
     when(bindingResult.getFieldErrors())
         .thenReturn(
-            List.of(
-                new FieldError("request", "customerId", null, false, null, null, null)));
+            List.of(new FieldError("request", "customerId", null, false, null, null, null)));
 
     ResponseEntity<ProblemDetail> response = handler.handleValidation(exception);
 

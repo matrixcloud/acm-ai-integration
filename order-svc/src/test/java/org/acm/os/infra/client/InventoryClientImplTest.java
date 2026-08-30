@@ -17,8 +17,7 @@ class InventoryClientImplTest {
   void reserveReducesStockAndReleaseRestoresIt() {
     InventoryItem allStock = new InventoryItem("SKU-001", 100);
 
-    InventoryReservation reservation =
-        client.reserve("order-1", List.of(allStock), "reserve-key");
+    InventoryReservation reservation = client.reserve("order-1", List.of(allStock), "reserve-key");
     assertThat(reservation.reservationId()).isNotBlank();
     assertThatThrownBy(() -> client.reserve("order-2", List.of(allStock), "reserve-key-2"))
         .isInstanceOf(InsufficientInventoryException.class)
@@ -41,8 +40,7 @@ class InventoryClientImplTest {
 
     assertThat(
             client
-                .reserve(
-                    "order-2", List.of(new InventoryItem("SKU-001", 100)), "reserve-key-2")
+                .reserve("order-2", List.of(new InventoryItem("SKU-001", 100)), "reserve-key-2")
                 .reservationId())
         .isNotBlank();
   }
@@ -65,8 +63,8 @@ class InventoryClientImplTest {
     assertThat(retried.reservationId()).isNotEqualTo(first.reservationId());
     client.release(retried.reservationId(), "release-key");
     assertThat(
-            client.reserve(
-                    "order-2", List.of(new InventoryItem("SKU-001", 100)), "all-stock")
+            client
+                .reserve("order-2", List.of(new InventoryItem("SKU-001", 100)), "all-stock")
                 .reservationId())
         .isNotBlank();
   }

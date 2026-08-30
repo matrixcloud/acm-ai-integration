@@ -7,17 +7,17 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.acm.os.application.port.in.ShipmentUseCase.ShipmentLine;
 import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.application.exception.RetryableOperationException;
+import org.acm.os.application.port.in.ShipmentUseCase.ShipmentLine;
 import org.acm.os.application.port.out.InventoryClient;
 import org.acm.os.application.port.out.LogisticsClient;
 import org.acm.os.application.port.out.PaymentClient;
@@ -54,11 +54,7 @@ class OrderLifecycleServiceTest {
   void setUp() {
     service =
         new OrderLifecycleService(
-            orderRepository,
-            inventoryClient,
-            paymentClient,
-            logisticsClient,
-            idempotencyService);
+            orderRepository, inventoryClient, paymentClient, logisticsClient, idempotencyService);
     when(idempotencyService.execute(any(), any()))
         .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(1)).get());
     when(idempotencyService.executeRetryable(any(), any()))
@@ -176,8 +172,7 @@ class OrderLifecycleServiceTest {
     assertThat(service.approveRefund("REF-1", "admin", "yes", "key")).isSameAs(refund);
 
     verify(order).approveRefund(refund, "admin", "yes");
-    verify(paymentClient)
-        .refund("PAY-1", new BigDecimal("99.00"), "CNY", "refund:REF-1:payment");
+    verify(paymentClient).refund("PAY-1", new BigDecimal("99.00"), "CNY", "refund:REF-1:payment");
     verify(inventoryClient).restore(eq("ORD-1"), anyList(), eq("refund:REF-1:inventory"));
   }
 
@@ -223,8 +218,7 @@ class OrderLifecycleServiceTest {
         .thenReturn(new LogisticsClient.LogisticsShipment("TRACK-1"));
 
     Shipment result =
-        service.createShipment(
-            "ORD-1", "MOCK_EXPRESS", List.of(new ShipmentLine(1L, 1)), "key");
+        service.createShipment("ORD-1", "MOCK_EXPRESS", List.of(new ShipmentLine(1L, 1)), "key");
 
     assertThat(result.getTrackingNo()).isEqualTo("TRACK-1");
     verify(order).allocateShipment(result);
@@ -245,8 +239,7 @@ class OrderLifecycleServiceTest {
 
     when(shipment.getStatus()).thenReturn(ShipmentStatus.DELIVERED);
     service.confirmReceipt("ORD-1", "SHP-1", "key-2");
-    verify(logisticsClient, times(1))
-        .confirmReceipt("TRACK-1", "confirm-receipt:SHP-1");
+    verify(logisticsClient, times(1)).confirmReceipt("TRACK-1", "confirm-receipt:SHP-1");
   }
 
   @Test

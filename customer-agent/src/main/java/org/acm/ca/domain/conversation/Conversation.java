@@ -39,8 +39,10 @@ public final class Conversation extends AuditMetadata {
 
   private String conversationNo;
   private String customerId;
+
   @Enumerated(EnumType.STRING)
   private ConversationStatus status;
+
   private LocalDateTime startedAt;
   private LocalDateTime endedAt;
 

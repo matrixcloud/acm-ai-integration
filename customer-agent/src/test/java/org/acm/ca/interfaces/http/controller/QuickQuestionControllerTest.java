@@ -30,12 +30,10 @@ class QuickQuestionControllerTest {
 
   @Test
   void listReturnsQuickQuestionResponses() {
-    QuickQuestionItem item =
-        new QuickQuestionItem(1L, 1, "我的订单到哪了？");
+    QuickQuestionItem item = new QuickQuestionItem(1L, 1, "我的订单到哪了？");
     QuickQuestionResponse response = new QuickQuestionResponse();
     when(conversationService.listQuickQuestions()).thenReturn(List.of(item));
-    when(responseMapper.toQuickQuestionResponseList(List.of(item)))
-        .thenReturn(List.of(response));
+    when(responseMapper.toQuickQuestionResponseList(List.of(item))).thenReturn(List.of(response));
 
     List<QuickQuestionResponse> result = controller.list();
 

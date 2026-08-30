@@ -15,9 +15,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 /**
- * Orchestrates the hybrid paradigm: rule router for the fast path, ReAct tool-calling for the
- * slow path. LLM tokens are consumed from Spring AI's {@code Flux} internally and pushed through
- * the transport-neutral {@link ReplyStream}; the {@code Flux} never leaks to the caller.
+ * Orchestrates the hybrid paradigm: rule router for the fast path, ReAct tool-calling for the slow
+ * path. LLM tokens are consumed from Spring AI's {@code Flux} internally and pushed through the
+ * transport-neutral {@link ReplyStream}; the {@code Flux} never leaks to the caller.
  */
 @Service
 public class AgentService implements AgentUseCase {
@@ -116,10 +116,15 @@ public class AgentService implements AgentUseCase {
     sb.append("## 订单信息\n");
     if (command.recentOrders() != null && !command.recentOrders().isEmpty()) {
       for (var order : command.recentOrders()) {
-        sb.append("- 订单号: ").append(order.orderNo())
-            .append(" | 状态: ").append(order.status())
-            .append(" | 金额: ").append(order.payableTotal())
-            .append(' ').append(order.currency()).append('\n');
+        sb.append("- 订单号: ")
+            .append(order.orderNo())
+            .append(" | 状态: ")
+            .append(order.status())
+            .append(" | 金额: ")
+            .append(order.payableTotal())
+            .append(' ')
+            .append(order.currency())
+            .append('\n');
       }
     } else {
       sb.append("（无订单信息）\n");

@@ -4,8 +4,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.acm.os.interfaces.http.exception.UnsupportedApiVersionException;
 import org.acm.os.domain.shared.BusinessException;
+import org.acm.os.interfaces.http.exception.UnsupportedApiVersionException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.dao.ConcurrencyFailureException;
 
 /**
  * Maps business and transport exceptions to Problem Details (RFC 9457) responses.
@@ -77,8 +77,8 @@ public class GlobalExceptionHandler {
    *
    * <p>Only transport-level failures map here. Business violations must use {@link
    * BusinessException} subclasses; unexpected {@code RuntimeException}s (including {@code
-   * IllegalArgumentException}) deliberately fall through to the container's 500 so server-side
-   * bugs are never disguised as client errors.
+   * IllegalArgumentException}) deliberately fall through to the container's 500 so server-side bugs
+   * are never disguised as client errors.
    *
    * @param exception malformed request failure
    * @return 400 Problem Detail
@@ -132,8 +132,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(ConcurrencyFailureException.class)
-  public ResponseEntity<ProblemDetail> handleConcurrency(
-      ConcurrencyFailureException exception) {
+  public ResponseEntity<ProblemDetail> handleConcurrency(ConcurrencyFailureException exception) {
     HttpStatus status = HttpStatus.CONFLICT;
     return ResponseEntity.status(status)
         .body(
@@ -152,7 +151,8 @@ public class GlobalExceptionHandler {
           "ORDER_NOT_REFUNDABLE",
           "SHIPMENT_QUANTITY_EXCEEDED",
           "IDEMPOTENCY_KEY_REUSED",
-          "ORDER_CONCURRENTLY_MODIFIED" -> HttpStatus.CONFLICT;
+          "ORDER_CONCURRENTLY_MODIFIED" ->
+          HttpStatus.CONFLICT;
       case "EXTERNAL_DEPENDENCY_FAILED" -> HttpStatus.BAD_GATEWAY;
       default ->
           throw new IllegalStateException(

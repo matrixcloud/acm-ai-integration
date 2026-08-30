@@ -6,8 +6,8 @@ package org.acm.ca.application.port.in;
  * transaction has committed; after {@code emitError} no further events are emitted.
  *
  * <p>Implementations may deliver events best-effort: transport failures (e.g. client disconnect)
- * disable further emission without aborting the use case, leaving the business outcome — commit
- * or rollback driven solely by application errors — deterministic.
+ * disable further emission without aborting the use case, leaving the business outcome — commit or
+ * rollback driven solely by application errors — deterministic.
  */
 public interface ConversationStream {
 

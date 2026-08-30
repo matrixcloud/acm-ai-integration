@@ -29,7 +29,10 @@ public class GlobalExceptionHandler {
             .map(
                 error ->
                     Map.of(
-                        "field", error.getField(), "message", safeMessage(error.getDefaultMessage())))
+                        "field",
+                        error.getField(),
+                        "message",
+                        safeMessage(error.getDefaultMessage())))
             .toList();
     ProblemDetail problem =
         problem(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "Request validation failed");
@@ -60,7 +63,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
-  public ResponseEntity<ProblemDetail> handleMissingHeader(MissingRequestHeaderException exception) {
+  public ResponseEntity<ProblemDetail> handleMissingHeader(
+      MissingRequestHeaderException exception) {
     String detail = "Required header '%s' is missing".formatted(exception.getHeaderName());
     return ResponseEntity.badRequest()
         .body(problem(HttpStatus.BAD_REQUEST, "MISSING_REQUEST_HEADER", detail));
@@ -72,7 +76,9 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest()
         .body(
             problem(
-                HttpStatus.BAD_REQUEST, "UNSUPPORTED_API_VERSION", safeMessage(exception.getMessage())));
+                HttpStatus.BAD_REQUEST,
+                "UNSUPPORTED_API_VERSION",
+                safeMessage(exception.getMessage())));
   }
 
   @ExceptionHandler(BusinessException.class)
@@ -90,7 +96,8 @@ public class GlobalExceptionHandler {
           "CONVERSATION_STATE_CONFLICT",
           "FEEDBACK_ALREADY_SUBMITTED",
           "IDEMPOTENCY_KEY_REUSED",
-          "CONVERSATION_CONCURRENTLY_MODIFIED" -> HttpStatus.CONFLICT;
+          "CONVERSATION_CONCURRENTLY_MODIFIED" ->
+          HttpStatus.CONFLICT;
       case "LLM_UNAVAILABLE", "EXTERNAL_DEPENDENCY_FAILED" -> HttpStatus.BAD_GATEWAY;
       default ->
           throw new IllegalStateException(

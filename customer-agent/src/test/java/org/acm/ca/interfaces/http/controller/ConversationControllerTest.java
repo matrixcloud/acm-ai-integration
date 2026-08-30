@@ -65,8 +65,7 @@ class ConversationControllerTest {
     when(conversationService.create(command, "key-1")).thenReturn(conversation);
     when(responseMapper.toDetailResponse(conversation)).thenReturn(response);
 
-    ResponseEntity<ConversationDetailResponse> result =
-        controller.create(request, "key-1");
+    ResponseEntity<ConversationDetailResponse> result = controller.create(request, "key-1");
 
     assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(result.getBody()).isSameAs(response);
@@ -84,8 +83,7 @@ class ConversationControllerTest {
     when(requestMapper.toQuery(request)).thenReturn(query);
     when(conversationService.search(query))
         .thenReturn(new PageImpl<>(List.of(conversation), PageRequest.of(1, 2), 5));
-    when(responseMapper.toSummaryResponseList(List.of(conversation)))
-        .thenReturn(List.of(response));
+    when(responseMapper.toSummaryResponseList(List.of(conversation))).thenReturn(List.of(response));
 
     PageResponse<ConversationSummaryResponse> result = controller.search(request);
 
@@ -103,8 +101,7 @@ class ConversationControllerTest {
     when(conversationService.findByConversationNo("CON-1")).thenReturn(conversation);
     when(responseMapper.toDetailResponse(conversation)).thenReturn(response);
 
-    ResponseEntity<ConversationDetailResponse> result =
-        controller.findByConversationNo("CON-1");
+    ResponseEntity<ConversationDetailResponse> result = controller.findByConversationNo("CON-1");
 
     assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(result.getBody()).isSameAs(response);

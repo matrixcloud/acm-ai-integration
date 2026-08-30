@@ -19,7 +19,9 @@ import org.acm.ca.domain.shared.AuditMetadata;
 @Table(
     name = "messages",
     uniqueConstraints = {
-      @UniqueConstraint(name = "uk_messages_conversation_seq", columnNames = {"conversation_id", "seq_no"}),
+      @UniqueConstraint(
+          name = "uk_messages_conversation_seq",
+          columnNames = {"conversation_id", "seq_no"}),
     })
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -31,7 +33,9 @@ public final class Message extends AuditMetadata {
   private Long id;
 
   private Integer seqNo;
+
   @Enumerated(EnumType.STRING)
   private MessageRole role;
+
   private String content;
 }

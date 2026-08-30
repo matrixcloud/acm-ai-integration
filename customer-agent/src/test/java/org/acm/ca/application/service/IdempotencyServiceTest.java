@@ -110,13 +110,7 @@ class IdempotencyServiceTest {
   void executeRejectsPendingOperation() {
     IdempotencyRecord pending =
         new IdempotencyRecord(
-            1L,
-            OPERATION,
-            KEY,
-            sha256(REQUEST_JSON),
-            null,
-            null,
-            IdempotencyRecord.STATUS_PENDING);
+            1L, OPERATION, KEY, sha256(REQUEST_JSON), null, null, IdempotencyRecord.STATUS_PENDING);
     when(objectMapper.writeValueAsString(REQUEST)).thenReturn(REQUEST_JSON);
     when(repository.findByOperationAndIdempotencyKey(OPERATION, KEY))
         .thenReturn(Optional.of(pending));
@@ -175,13 +169,7 @@ class IdempotencyServiceTest {
 
   private static IdempotencyRecord completedRecord(String requestHash) {
     return new IdempotencyRecord(
-        1L,
-        OPERATION,
-        KEY,
-        requestHash,
-        "\"created\"",
-        null,
-        IdempotencyRecord.STATUS_COMPLETED);
+        1L, OPERATION, KEY, requestHash, "\"created\"", null, IdempotencyRecord.STATUS_COMPLETED);
   }
 
   private static String sha256(String value) {

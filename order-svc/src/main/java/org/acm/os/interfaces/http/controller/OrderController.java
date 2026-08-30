@@ -3,25 +3,25 @@ package org.acm.os.interfaces.http.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.acm.common.http.PageResponse;
-import org.acm.os.application.port.in.command.CreateOrderCommand;
 import org.acm.os.application.port.in.OrderUseCase;
+import org.acm.os.application.port.in.command.CreateOrderCommand;
 import org.acm.os.domain.order.Order;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.acm.os.interfaces.http.mapper.OrderRequestMapper;
 import org.acm.os.interfaces.http.mapper.OrderResponseMapper;
 import org.acm.os.interfaces.http.request.CreateOrderRequest;
 import org.acm.os.interfaces.http.request.SearchOrderRequest;
 import org.acm.os.interfaces.http.response.CreateOrderResponse;
 import org.acm.os.interfaces.http.response.OrderSummaryResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST adapter for order use cases.
@@ -71,7 +71,10 @@ public class OrderController {
     return new PageResponse<>(
         responseMapper.toSummaryResponseList(result.getContent()),
         new PageResponse.Page(
-            result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()));
   }
 
   @GetMapping("/{orderNo}")

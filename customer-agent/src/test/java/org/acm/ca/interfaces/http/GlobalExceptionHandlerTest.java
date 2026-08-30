@@ -42,8 +42,7 @@ class GlobalExceptionHandlerTest {
     when(exception.getBindingResult()).thenReturn(bindingResult);
     when(bindingResult.getFieldErrors())
         .thenReturn(
-            List.of(
-                new FieldError("request", "customerId", null, false, null, null, null)));
+            List.of(new FieldError("request", "customerId", null, false, null, null, null)));
 
     ResponseEntity<ProblemDetail> response = handler.handleValidation(exception);
 

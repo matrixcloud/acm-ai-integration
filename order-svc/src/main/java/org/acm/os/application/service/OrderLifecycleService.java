@@ -3,6 +3,8 @@ package org.acm.os.application.service;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.acm.os.application.exception.PersistedRetryableFailureException;
+import org.acm.os.application.exception.RetryableOperationException;
 import org.acm.os.application.port.in.PaymentUseCase;
 import org.acm.os.application.port.in.RefundUseCase;
 import org.acm.os.application.port.in.ShipmentUseCase;
@@ -11,8 +13,6 @@ import org.acm.os.application.port.out.InventoryClient.InventoryItem;
 import org.acm.os.application.port.out.LogisticsClient;
 import org.acm.os.application.port.out.LogisticsClient.AddressSnapshot;
 import org.acm.os.application.port.out.PaymentClient;
-import org.acm.os.application.exception.RetryableOperationException;
-import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.domain.order.Order;
 import org.acm.os.domain.order.OrderNotFoundException;
 import org.acm.os.domain.order.OrderRepository;
@@ -20,13 +20,11 @@ import org.acm.os.domain.order.OrderStatus;
 import org.acm.os.domain.payment.Payment;
 import org.acm.os.domain.payment.PaymentStatus;
 import org.acm.os.domain.refund.Refund;
-import org.acm.os.domain.refund.RefundStatus;
 import org.acm.os.domain.shared.BusinessNumberGenerator;
 import org.acm.os.domain.shipment.Shipment;
 import org.acm.os.domain.shipment.ShipmentItem;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -46,10 +44,7 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
           order.assertCanCreatePayment();
           PaymentClient.PaymentSession session =
               paymentClient.create(
-                  orderNo,
-                  order.getPayableTotal(),
-                  order.getCurrency(),
-                  idempotencyKey);
+                  orderNo, order.getPayableTotal(), order.getCurrency(), idempotencyKey);
           Payment payment = order.addPayment(session.paymentToken());
           orderRepository.saveAndFlush(order);
           return payment;
@@ -57,8 +52,7 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
   }
 
   @Override
-  public Order succeedPayment(
-      String paymentNo, String externalPaymentNo, String idempotencyKey) {
+  public Order succeedPayment(String paymentNo, String externalPaymentNo, String idempotencyKey) {
     return idempotencyService.execute(
         operation(
             "succeed-payment",
@@ -191,10 +185,7 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
 
   @Override
   public Shipment createShipment(
-      String orderNo,
-      String carrierCode,
-      List<ShipmentLine> lines,
-      String idempotencyKey) {
+      String orderNo, String carrierCode, List<ShipmentLine> lines, String idempotencyKey) {
     return idempotencyService.execute(
         operation(
             "create-shipment",
@@ -218,8 +209,7 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
                   lines.stream()
                       .map(
                           line ->
-                              new LogisticsClient.ShipmentItem(
-                                  line.orderItemId(), line.quantity()))
+                              new LogisticsClient.ShipmentItem(line.orderItemId(), line.quantity()))
                       .toList(),
                   idempotencyKey);
           Shipment shipment =

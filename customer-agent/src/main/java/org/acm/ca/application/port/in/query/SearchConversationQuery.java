@@ -11,6 +11,13 @@ import org.acm.ca.domain.conversation.ConversationStatus;
 public class SearchConversationQuery {
   @NotBlank private String customerId;
   private ConversationStatus status;
-  @NotNull @Min(1) private Integer page;
-  @NotNull @Min(1) @Max(100) private Integer size;
+
+  @NotNull
+  @Min(1)
+  private Integer page;
+
+  @NotNull
+  @Min(1)
+  @Max(100)
+  private Integer size;
 }

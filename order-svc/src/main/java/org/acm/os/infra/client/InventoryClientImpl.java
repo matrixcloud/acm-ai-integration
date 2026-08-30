@@ -6,17 +6,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.acm.os.application.port.out.InsufficientInventoryException;
 import org.acm.os.application.port.out.InventoryClient;
-import org.springframework.stereotype.Component;
-import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 /**
  * In-memory Mock implementation of {@link InventoryClient} (design §11.1: "Mock 库存显式维护可售、
  * 预占和已扣减数量").
  *
- * <p>Registered only for the {@code demo} profile when {@code order.adapters.inventory=mock}.
- * State lives in memory only and insufficient stock fails explicitly.
+ * <p>Registered only for the {@code demo} profile when {@code order.adapters.inventory=mock}. State
+ * lives in memory only and insufficient stock fails explicitly.
  */
 @Component
 @Profile("demo")
@@ -28,7 +28,8 @@ public class InventoryClientImpl implements InventoryClient {
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, String> reservationByKey = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, String> reservationKeyById = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, List<InventoryItem>> confirmed = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, List<InventoryItem>> confirmed =
+      new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, Boolean> completedOperations = new ConcurrentHashMap<>();
   private MockFailureRegistry failureRegistry = new MockFailureRegistry();
 
@@ -46,7 +47,8 @@ public class InventoryClientImpl implements InventoryClient {
       return new InventoryReservation(existingReservation);
     }
     for (InventoryItem item : items) {
-      AtomicInteger available = stock.computeIfAbsent(item.skuId(), k -> new AtomicInteger(DEFAULT_STOCK));
+      AtomicInteger available =
+          stock.computeIfAbsent(item.skuId(), k -> new AtomicInteger(DEFAULT_STOCK));
       if (available.get() < item.quantity()) {
         throw new InsufficientInventoryException(
             "Insufficient stock for SKU '%s' (requested %d, available %d)"
@@ -73,7 +75,8 @@ public class InventoryClientImpl implements InventoryClient {
     List<InventoryItem> items = reservations.remove(reservationId);
     if (items == null) {
       completedOperations.remove(operationKey);
-      throw new IllegalArgumentException("Unknown inventory reservation '%s'".formatted(reservationId));
+      throw new IllegalArgumentException(
+          "Unknown inventory reservation '%s'".formatted(reservationId));
     }
     for (InventoryItem item : items) {
       stock.get(item.skuId()).addAndGet(item.quantity());
@@ -91,7 +94,8 @@ public class InventoryClientImpl implements InventoryClient {
     List<InventoryItem> items = reservations.remove(reservationId);
     if (items == null) {
       completedOperations.remove(operationKey);
-      throw new IllegalArgumentException("Unknown inventory reservation '%s'".formatted(reservationId));
+      throw new IllegalArgumentException(
+          "Unknown inventory reservation '%s'".formatted(reservationId));
     }
     confirmed.put(reservationId, items);
     removeReservationKey(reservationId);

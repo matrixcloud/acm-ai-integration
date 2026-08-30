@@ -2,15 +2,11 @@ package org.acm.ca.interfaces.http.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import org.acm.ca.application.port.in.ConversationUseCase.MessageThread;
 import org.acm.ca.application.port.in.ConversationUseCase.QuickQuestionItem;
 import org.acm.ca.domain.conversation.Conversation;
-import org.acm.ca.domain.conversation.ConversationStatus;
 import org.acm.ca.domain.conversation.FeedbackRating;
-import org.acm.ca.domain.conversation.Message;
-import org.acm.ca.domain.conversation.MessageRole;
 import org.acm.ca.interfaces.http.response.ConversationDetailResponse;
 import org.acm.ca.interfaces.http.response.ConversationSummaryResponse;
 import org.acm.ca.interfaces.http.response.MessageThreadResponse;
@@ -72,8 +68,7 @@ class ConversationResponseMapperTest {
     assertThat(response.getCustomerId()).isEqualTo("customer-001");
     assertThat(response.getStatus()).isEqualTo("ACTIVE");
     assertThat(response.getStartedAt()).isNotNull();
-    assertThat(mapper.toSummaryResponseList(List.of(conversation)))
-        .containsExactly(response);
+    assertThat(mapper.toSummaryResponseList(List.of(conversation))).containsExactly(response);
   }
 
   @Test
@@ -82,7 +77,8 @@ class ConversationResponseMapperTest {
     conversation.addCustomerMessage("你好");
     conversation.addAgentReply("您好");
     MessageThread thread =
-        new MessageThread(conversation.getConversationNo(), List.copyOf(conversation.getMessages()));
+        new MessageThread(
+            conversation.getConversationNo(), List.copyOf(conversation.getMessages()));
 
     MessageThreadResponse response = mapper.toThreadResponse(thread);
 
@@ -101,7 +97,6 @@ class ConversationResponseMapperTest {
     assertThat(response.getId()).isEqualTo(1L);
     assertThat(response.getSortOrder()).isEqualTo(5);
     assertThat(response.getQuestionText()).isEqualTo("如何联系人工客服？");
-    assertThat(mapper.toQuickQuestionResponseList(List.of(item)))
-        .containsExactly(response);
+    assertThat(mapper.toQuickQuestionResponseList(List.of(item))).containsExactly(response);
   }
 }

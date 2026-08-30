@@ -9,23 +9,27 @@ import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.acm.os.domain.shared.AuditMetadata;
 
 /**
  * A single line within an {@link Order}.
  *
- * <p>Mutable line fields (lineNo, lineAmount) are set by the aggregate root when the item is
- * added; callers must not mutate them directly.
+ * <p>Mutable line fields (lineNo, lineAmount) are set by the aggregate root when the item is added;
+ * callers must not mutate them directly.
  */
 @Entity
 @Table(
     name = "order_items",
     uniqueConstraints = {
-      @UniqueConstraint(name = "uk_order_items_order_line", columnNames = {"order_id", "line_no"}),
-      @UniqueConstraint(name = "uk_order_items_order_sku", columnNames = {"order_id", "sku_id"}),
+      @UniqueConstraint(
+          name = "uk_order_items_order_line",
+          columnNames = {"order_id", "line_no"}),
+      @UniqueConstraint(
+          name = "uk_order_items_order_sku",
+          columnNames = {"order_id", "sku_id"}),
     })
 @EqualsAndHashCode(callSuper = true)
 @Data

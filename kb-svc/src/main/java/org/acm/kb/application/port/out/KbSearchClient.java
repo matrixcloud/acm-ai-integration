@@ -3,8 +3,8 @@ package org.acm.kb.application.port.out;
 import java.util.List;
 
 /**
- * Outbound search port for knowledge-base retrieval, consumed by {@code customer-agent} via a
- * mock adapter in the demo phase.
+ * Outbound search port for knowledge-base retrieval, consumed by {@code customer-agent} via a mock
+ * adapter in the demo phase.
  *
  * <p>This port exposes similarity search to external callers; {@code kb-svc}'s own application
  * service uses {@code VectorStore} directly.

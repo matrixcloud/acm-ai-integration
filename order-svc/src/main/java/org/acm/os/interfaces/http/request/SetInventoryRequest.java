@@ -6,5 +6,7 @@ import lombok.Data;
 
 @Data
 public class SetInventoryRequest {
-  @NotNull @Min(0) private Integer quantity;
+  @NotNull
+  @Min(0)
+  private Integer quantity;
 }

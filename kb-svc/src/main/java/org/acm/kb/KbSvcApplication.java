@@ -9,5 +9,4 @@ public class KbSvcApplication {
   public static void main(String[] args) {
     SpringApplication.run(KbSvcApplication.class, args);
   }
-
 }

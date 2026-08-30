@@ -20,14 +20,16 @@ import org.acm.os.domain.shared.AuditMetadata;
  * operation receives the previously stored result instead of re-executing the operation.
  *
  * <p>{@code status} is the record's own lifecycle (PENDING → COMPLETED) and must not carry any
- * other meaning. {@code responseStatus} is retained for schema compatibility but unused —
- * replay reads only {@code responseBody}.
+ * other meaning. {@code responseStatus} is retained for schema compatibility but unused — replay
+ * reads only {@code responseBody}.
  */
 @Entity
 @Table(
     name = "idempotency_records",
     uniqueConstraints =
-        @UniqueConstraint(name = "uk_idempotency_key", columnNames = {"operation", "idempotency_key"}))
+        @UniqueConstraint(
+            name = "uk_idempotency_key",
+            columnNames = {"operation", "idempotency_key"}))
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
@@ -39,6 +41,7 @@ public final class IdempotencyRecord extends AuditMetadata {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
   private String operation;
   private String idempotencyKey;
   private String requestHash;

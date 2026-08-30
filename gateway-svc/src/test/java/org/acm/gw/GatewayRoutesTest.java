@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
-import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.http.HttpStatus;
 
 @SpringBootTest(properties = "eureka.client.enabled=false")
@@ -27,29 +27,43 @@ class GatewayRoutesTest {
   private static final List<String> OTHER_ROUTE_IDS =
       List.of("customer-agent-other", "order-svc-other", "kb-svc-other");
 
-  @Autowired
-  RouteDefinitionLocator routeDefinitionLocator;
+  @Autowired RouteDefinitionLocator routeDefinitionLocator;
 
   @Test
   void exposesOneRoutePerMethodPerServiceWithStripPrefixTwo() {
     List<RouteDefinition> routes = routes();
 
-    assertThat(routes).extracting(RouteDefinition::getId).containsExactlyInAnyOrder(
-      "customer-agent-get", "customer-agent-write", "customer-agent-sse", "customer-agent-other",
-      "order-svc-get", "order-svc-write", "order-svc-other",
-      "kb-svc-get", "kb-svc-write", "kb-svc-other");
+    assertThat(routes)
+        .extracting(RouteDefinition::getId)
+        .containsExactlyInAnyOrder(
+            "customer-agent-get",
+            "customer-agent-write",
+            "customer-agent-sse",
+            "customer-agent-other",
+            "order-svc-get",
+            "order-svc-write",
+            "order-svc-other",
+            "kb-svc-get",
+            "kb-svc-write",
+            "kb-svc-other");
 
-    assertThat(routes).allSatisfy(route -> assertThat(route.getFilters()).anySatisfy(filter -> {
-      assertThat(filter.getName()).isEqualTo("StripPrefix");
-      assertThat(filter.getArgs()).containsValue("2");
-    }));
+    assertThat(routes)
+        .allSatisfy(
+            route ->
+                assertThat(route.getFilters())
+                    .anySatisfy(
+                        filter -> {
+                          assertThat(filter.getName()).isEqualTo("StripPrefix");
+                          assertThat(filter.getArgs()).containsValue("2");
+                        }));
   }
 
   @Test
   void getRoutesRetryTransientStatusesOnceAndAreCircuitBreakerProtected() {
     for (RouteDefinition route : routesById(GET_ROUTE_IDS)) {
       Map<String, String> retryArgs = filterArgs(route, "Retry");
-      assertThat(retryArgs).as("%s retry args", route.getId())
+      assertThat(retryArgs)
+          .as("%s retry args", route.getId())
           .containsEntry("retries", "1")
           .containsEntry("methods", "GET")
           // 显式关闭默认的 series=[SERVER_ERROR]：500 是下游缺陷，不重试
@@ -67,9 +81,7 @@ class GatewayRoutesTest {
       assertThat(route.getFilters())
           .as("%s circuit breaker", route.getId())
           .anySatisfy(filter -> assertThat(filter.getName()).isEqualTo("CircuitBreaker"));
-      assertThat(filterArgs(route, "Retry"))
-          .as("%s must not retry writes", route.getId())
-          .isNull();
+      assertThat(filterArgs(route, "Retry")).as("%s must not retry writes", route.getId()).isNull();
     }
   }
 

@@ -11,8 +11,8 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 
 /**
- * Explicit circuit breaker configuration for the HTTP service groups. With
- * {@code spring-cloud-starter-circuitbreaker-resilience4j} on the classpath, Spring Cloud creates a
+ * Explicit circuit breaker configuration for the HTTP service groups. With {@code
+ * spring-cloud-starter-circuitbreaker-resilience4j} on the classpath, Spring Cloud creates a
  * circuit breaker per group named after the group; this customizer tunes only the two downstream
  * groups instead of relying on global defaults.
  */

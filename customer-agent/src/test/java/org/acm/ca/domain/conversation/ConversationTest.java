@@ -126,8 +126,7 @@ class ConversationTest {
     void shouldRejectFeedbackOnActiveConversation() {
       Conversation conversation = Conversation.create("customer-001");
 
-      assertThatThrownBy(
-              () -> conversation.submitFeedback(FeedbackRating.SATISFIED, null))
+      assertThatThrownBy(() -> conversation.submitFeedback(FeedbackRating.SATISFIED, null))
           .isInstanceOf(ConversationStateConflictException.class);
     }
 
@@ -137,8 +136,7 @@ class ConversationTest {
       conversation.end();
       conversation.submitFeedback(FeedbackRating.SATISFIED, null);
 
-      assertThatThrownBy(
-              () -> conversation.submitFeedback(FeedbackRating.DISSATISFIED, null))
+      assertThatThrownBy(() -> conversation.submitFeedback(FeedbackRating.DISSATISFIED, null))
           .isInstanceOf(ConversationStateConflictException.class);
     }
   }

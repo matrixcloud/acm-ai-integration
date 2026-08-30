@@ -22,6 +22,7 @@ public final class QuickQuestion extends AuditMetadata {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
   private Integer sortOrder;
   private String questionText;
   private Boolean enabled;

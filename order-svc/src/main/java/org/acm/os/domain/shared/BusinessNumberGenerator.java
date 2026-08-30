@@ -15,8 +15,7 @@ public final class BusinessNumberGenerator {
   public static String deterministic(String prefix, String value) {
     try {
       byte[] hash =
-          MessageDigest.getInstance("SHA-256")
-              .digest(value.getBytes(StandardCharsets.UTF_8));
+          MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
       StringBuilder result = new StringBuilder(prefix);
       for (int index = 0; index < 16; index++) {
         result.append("%02x".formatted(hash[index]));

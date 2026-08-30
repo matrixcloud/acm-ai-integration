@@ -9,9 +9,9 @@ public class OrderSvcApplication {
   /**
    * Starts the order service.
    *
-   * <p>Entities and repositories are discovered by Boot's default scan rooted at {@code org.acm.os},
-   * so no {@code @EntityScan} / {@code @EnableJpaRepositories} narrowing is needed — and narrowing
-   * would silently exclude any entity moved out of {@code org.acm.os.domain}.
+   * <p>Entities and repositories are discovered by Boot's default scan rooted at {@code
+   * org.acm.os}, so no {@code @EntityScan} / {@code @EnableJpaRepositories} narrowing is needed —
+   * and narrowing would silently exclude any entity moved out of {@code org.acm.os.domain}.
    *
    * @param args application arguments
    */

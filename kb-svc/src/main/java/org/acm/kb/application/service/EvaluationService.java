@@ -90,8 +90,7 @@ public class EvaluationService implements EvaluationUseCase {
     EvaluationSuite suite = loadSuite(suiteNo);
     List<EvaluationCase> cases = caseRepository.findBySuiteId(suite.getId());
     if (cases.isEmpty()) {
-      throw new InvalidRequestException(
-          "Evaluation suite %s has no test cases".formatted(suiteNo));
+      throw new InvalidRequestException("Evaluation suite %s has no test cases".formatted(suiteNo));
     }
     EvaluationRun run = EvaluationRun.create(kbNo, suite.getId(), topK);
     runRepository.save(run);
@@ -121,7 +120,9 @@ public class EvaluationService implements EvaluationUseCase {
         runRepository
             .findByRunNo(runNo)
             .orElseThrow(
-                () -> new EvaluationRunNotFoundException("Evaluation run %s not found".formatted(runNo)));
+                () ->
+                    new EvaluationRunNotFoundException(
+                        "Evaluation run %s not found".formatted(runNo)));
     List<EvaluationRunDetail> details = detailRepository.findByRunId(run.getId());
     return new RunReport(run, details);
   }
@@ -133,8 +134,7 @@ public class EvaluationService implements EvaluationUseCase {
         chunks.stream()
             .map(chunk -> Document.builder().text(chunk.content()).build())
             .collect(Collectors.toList());
-    String contextText =
-        chunks.stream().map(KbChunk::content).collect(Collectors.joining("\n\n"));
+    String contextText = chunks.stream().map(KbChunk::content).collect(Collectors.joining("\n\n"));
     String answer = generateAnswer(caseEntity.getQuery(), contextText);
     EvaluationRequest contextRequest =
         new EvaluationRequest(caseEntity.getQuery(), contextDocuments, "");
@@ -175,9 +175,7 @@ public class EvaluationService implements EvaluationUseCase {
     double contextAvg = contextSum / total;
     double faithAvg = faithSum / total;
     double answerAvg = answerSum / total;
-    return new EvaluationMetrics(
-        contextAvg, faithAvg, answerAvg,
-        contextAvg, faithAvg, answerAvg);
+    return new EvaluationMetrics(contextAvg, faithAvg, answerAvg, contextAvg, faithAvg, answerAvg);
   }
 
   private EvaluationSuite loadSuite(String suiteNo) {

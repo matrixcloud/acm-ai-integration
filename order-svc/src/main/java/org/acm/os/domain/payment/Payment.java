@@ -69,8 +69,7 @@ public final class Payment extends AuditMetadata {
       succeed(externalPaymentNo);
       return;
     }
-    if (this.externalPaymentNo != null
-        && !this.externalPaymentNo.equals(externalPaymentNo)) {
+    if (this.externalPaymentNo != null && !this.externalPaymentNo.equals(externalPaymentNo)) {
       throw new IllegalStateException("Payment notification uses another external number");
     }
     this.externalPaymentNo = externalPaymentNo;

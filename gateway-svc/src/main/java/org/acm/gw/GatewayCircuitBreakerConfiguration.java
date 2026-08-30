@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Explicit circuit breaker parameters for the gateway's downstream service routes. Without this,
  * resilience4j's defaults (minimum 100 calls before evaluation) would make the route-level
- * protection inert at gateway traffic levels; the parameters mirror the service-client side so
- * both layers share one protection contract.
+ * protection inert at gateway traffic levels; the parameters mirror the service-client side so both
+ * layers share one protection contract.
  */
 @Configuration(proxyBeanMethods = false)
 class GatewayCircuitBreakerConfiguration {

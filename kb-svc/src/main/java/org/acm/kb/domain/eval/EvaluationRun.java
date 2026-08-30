@@ -20,8 +20,8 @@ import org.acm.kb.domain.shared.AuditMetadata;
 /**
  * An evaluation run aggregate root.
  *
- * <p>Records the execution of a batch evaluation against a knowledge base using a test suite.
- * Holds the aggregated metrics and lifecycle timestamps; per-case scores live in {@link
+ * <p>Records the execution of a batch evaluation against a knowledge base using a test suite. Holds
+ * the aggregated metrics and lifecycle timestamps; per-case scores live in {@link
  * EvaluationRunDetail}.
  */
 @Entity
@@ -38,8 +38,10 @@ public final class EvaluationRun extends AuditMetadata {
   private String runNo;
   private String kbNo;
   private Long suiteId;
+
   @Enumerated(EnumType.STRING)
   private EvaluationRunStatus status;
+
   private int topK;
   private double contextRelevancyAvg;
   private double faithfulnessAvg;

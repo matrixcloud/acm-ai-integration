@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.acm.os.domain.order.OrderStateConflictException;
 import org.acm.os.domain.shared.AuditMetadata;
-import org.acm.os.domain.shared.BusinessNumberGenerator;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 

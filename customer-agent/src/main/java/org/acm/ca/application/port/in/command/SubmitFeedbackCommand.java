@@ -10,5 +10,7 @@ import org.acm.ca.domain.conversation.FeedbackRating;
 public class SubmitFeedbackCommand {
   @NotBlank private String conversationNo;
   @NotNull private FeedbackRating rating;
-  @Size(max = 500) private String comment;
+
+  @Size(max = 500)
+  private String comment;
 }

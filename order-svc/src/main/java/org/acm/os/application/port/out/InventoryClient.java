@@ -15,8 +15,8 @@ public interface InventoryClient {
    * @param orderNo order being created
    * @param items quantities per SKU to reserve
    * @param idempotencyKey key identifying this reserve attempt; must be stable across retries of
-   *     the same attempt (callers may use the order number — the outer idempotency protocol
-   *     already guarantees one execution per client key)
+   *     the same attempt (callers may use the order number — the outer idempotency protocol already
+   *     guarantees one execution per client key)
    * @return reservation id to be stored on the order
    * @throws InsufficientInventoryException if any SKU has insufficient stock
    */

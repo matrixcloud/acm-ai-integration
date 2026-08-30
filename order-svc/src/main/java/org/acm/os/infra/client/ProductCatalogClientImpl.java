@@ -4,15 +4,15 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.acm.os.application.port.out.ProductCatalogClient;
 import org.acm.os.application.port.out.ProductNotFoundException;
 import org.acm.os.domain.shared.InvalidRequestException;
-import org.springframework.stereotype.Component;
-import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 /**
  * In-memory Mock implementation of {@link ProductCatalogClient} (design §11.1: "Mock 商品目录保存
@@ -30,7 +30,8 @@ public class ProductCatalogClientImpl implements ProductCatalogClient {
           "SKU-001",
               new ProductSnapshot("SKU-001", "Wireless Mouse", new BigDecimal("99.00"), "CNY"),
           "SKU-002",
-              new ProductSnapshot("SKU-002", "Mechanical Keyboard", new BigDecimal("399.00"), "CNY"),
+              new ProductSnapshot(
+                  "SKU-002", "Mechanical Keyboard", new BigDecimal("399.00"), "CNY"),
           "SKU-003",
               new ProductSnapshot("SKU-003", "USB-C Cable 2m", new BigDecimal("29.00"), "CNY"));
   private final Map<String, ProductSnapshot> catalog = new ConcurrentHashMap<>(DEFAULT_CATALOG);
@@ -59,7 +60,8 @@ public class ProductCatalogClientImpl implements ProductCatalogClient {
   public void setProduct(
       String skuId, String productName, BigDecimal unitPrice, String currency, boolean saleable) {
     if (unitPrice == null || unitPrice.signum() < 0 || unitPrice.scale() > 2) {
-      throw new InvalidRequestException("Product price must be non-negative with at most 2 decimals");
+      throw new InvalidRequestException(
+          "Product price must be non-negative with at most 2 decimals");
     }
     if (currency == null || currency.length() != 3) {
       throw new InvalidRequestException("Product currency must be a 3-letter ISO code");

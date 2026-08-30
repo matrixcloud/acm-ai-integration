@@ -4,11 +4,7 @@ import java.math.BigDecimal;
 
 public interface MockControlPort {
   void setProduct(
-      String skuId,
-      String productName,
-      BigDecimal unitPrice,
-      String currency,
-      boolean saleable);
+      String skuId, String productName, BigDecimal unitPrice, String currency, boolean saleable);
 
   void setInventory(String skuId, int quantity);
 

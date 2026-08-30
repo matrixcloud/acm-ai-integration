@@ -1,11 +1,11 @@
 package org.acm.os.interfaces.http.mapper;
 
-import org.acm.os.interfaces.http.request.CreateOrderRequest;
-import org.acm.os.interfaces.http.request.SearchOrderRequest;
 import org.acm.os.application.port.in.command.CreateOrderCommand;
 import org.acm.os.application.port.in.query.SearchOrderQuery;
 import org.acm.os.domain.order.OrderStatus;
 import org.acm.os.domain.shared.InvalidRequestException;
+import org.acm.os.interfaces.http.request.CreateOrderRequest;
+import org.acm.os.interfaces.http.request.SearchOrderRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -48,8 +48,7 @@ public interface OrderRequestMapper {
     try {
       return OrderStatus.valueOf(status);
     } catch (IllegalArgumentException e) {
-      throw new InvalidRequestException(
-          "Unsupported order status '%s'".formatted(status));
+      throw new InvalidRequestException("Unsupported order status '%s'".formatted(status));
     }
   }
 }

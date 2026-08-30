@@ -48,7 +48,8 @@ class KbSearchClientImplTest {
   @Test
   void searchCallsKbServiceAndMapsResponse() {
     Fixture fixture = fixture();
-    fixture.server()
+    fixture
+        .server()
         .expect(requestTo(REQUEST_URL))
         .andExpect(method(HttpMethod.POST))
         .andExpect(header("API-Version", "1"))
@@ -68,7 +69,9 @@ class KbSearchClientImplTest {
   @Test
   void searchReturnsEmptyWhenNoChunkMatches() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("{\"chunks\":[]}", MediaType.APPLICATION_JSON));
 
     assertThat(fixture.client().search(REQUEST)).isEmpty();
@@ -78,7 +81,9 @@ class KbSearchClientImplTest {
   @Test
   void searchFailsFastOnMissingChunks() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
     assertThatThrownBy(() -> fixture.client().search(REQUEST))
@@ -90,7 +95,9 @@ class KbSearchClientImplTest {
   @Test
   void searchFailsFastOnMissingResponseBody() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
     assertThatThrownBy(() -> fixture.client().search(REQUEST))
@@ -102,10 +109,14 @@ class KbSearchClientImplTest {
   @Test
   void searchRetriesOnceOnServiceUnavailableThenSucceeds() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withSuccess(CHUNKS_JSON, MediaType.APPLICATION_JSON));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withSuccess(CHUNKS_JSON, MediaType.APPLICATION_JSON));
 
       List<KbChunk> chunks = fixture.client().search(REQUEST);
 
@@ -117,8 +128,10 @@ class KbSearchClientImplTest {
   @Test
   void searchDoesNotRetryOnBadRequest() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.BAD_REQUEST));
 
       assertThatThrownBy(() -> fixture.client().search(REQUEST))
           .isInstanceOf(KbSearchUnavailableException.class)
@@ -130,10 +143,14 @@ class KbSearchClientImplTest {
   @Test
   void searchThrowsStableExceptionAfterRetriesExhaustedWithinBudget() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
       long start = System.nanoTime();
       assertThatThrownBy(() -> fixture.client().search(REQUEST))
@@ -154,9 +171,7 @@ class KbSearchClientImplTest {
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     RestClientAdapter adapter = RestClientAdapter.create(builder.build());
     KbServiceHttpClient httpClient =
-        HttpServiceProxyFactory.builderFor(adapter)
-            .build()
-            .createClient(KbServiceHttpClient.class);
+        HttpServiceProxyFactory.builderFor(adapter).build().createClient(KbServiceHttpClient.class);
     return new Fixture(new KbSearchClientImpl(httpClient), server);
   }
 
@@ -165,9 +180,7 @@ class KbSearchClientImplTest {
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     RestClientAdapter adapter = RestClientAdapter.create(builder.build());
     KbServiceHttpClient httpClient =
-        HttpServiceProxyFactory.builderFor(adapter)
-            .build()
-            .createClient(KbServiceHttpClient.class);
+        HttpServiceProxyFactory.builderFor(adapter).build().createClient(KbServiceHttpClient.class);
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
     context.register(HttpServiceResilienceConfiguration.class);
     context.registerBean(KbSearchClientImpl.class, () -> new KbSearchClientImpl(httpClient));
@@ -178,7 +191,9 @@ class KbSearchClientImplTest {
   private record Fixture(KbSearchClientImpl client, MockRestServiceServer server) {}
 
   private record RetryFixture(
-      KbSearchClient client, MockRestServiceServer server, AnnotationConfigApplicationContext context)
+      KbSearchClient client,
+      MockRestServiceServer server,
+      AnnotationConfigApplicationContext context)
       implements AutoCloseable {
 
     @Override

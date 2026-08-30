@@ -66,8 +66,7 @@ class OrderTest {
   void replaceItemsRejectsNullOrEmptyItems() {
     Order order = createOrder(List.of(item("SKU-001", "10.00", 1)));
 
-    assertThatThrownBy(() -> order.replaceItems(null))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> order.replaceItems(null)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> order.replaceItems(List.of()))
         .isInstanceOf(IllegalArgumentException.class);
   }

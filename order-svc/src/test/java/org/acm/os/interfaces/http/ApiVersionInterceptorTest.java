@@ -17,26 +17,20 @@ class ApiVersionInterceptorTest {
   @Test
   void acceptsSupportedVersion() {
     when(request.getHeader("API-Version")).thenReturn("1");
-    assertThat(
-            interceptor.preHandle(
-                request, mock(HttpServletResponse.class), new Object()))
+    assertThat(interceptor.preHandle(request, mock(HttpServletResponse.class), new Object()))
         .isTrue();
   }
 
   @Test
   void rejectsMissingAndUnsupportedVersions() {
     assertThatThrownBy(
-            () ->
-                interceptor.preHandle(
-                    request, mock(HttpServletResponse.class), new Object()))
+            () -> interceptor.preHandle(request, mock(HttpServletResponse.class), new Object()))
         .isInstanceOf(UnsupportedApiVersionException.class)
         .hasMessage("Required header 'API-Version' is missing");
 
     when(request.getHeader("API-Version")).thenReturn("2");
     assertThatThrownBy(
-            () ->
-                interceptor.preHandle(
-                    request, mock(HttpServletResponse.class), new Object()))
+            () -> interceptor.preHandle(request, mock(HttpServletResponse.class), new Object()))
         .isInstanceOf(UnsupportedApiVersionException.class)
         .hasMessage("Unsupported API version '2'");
   }

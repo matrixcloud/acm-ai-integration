@@ -7,5 +7,7 @@ import lombok.Data;
 @Data
 public class SearchRequest {
   @NotBlank private String query;
-  @Min(1) private int topK = 5;
+
+  @Min(1)
+  private int topK = 5;
 }

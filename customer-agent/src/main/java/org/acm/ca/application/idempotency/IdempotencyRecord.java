@@ -17,7 +17,9 @@ import org.acm.ca.domain.shared.AuditMetadata;
 @Table(
     name = "idempotency_records",
     uniqueConstraints =
-        @UniqueConstraint(name = "uk_idempotency_key", columnNames = {"operation", "idempotency_key"}))
+        @UniqueConstraint(
+            name = "uk_idempotency_key",
+            columnNames = {"operation", "idempotency_key"}))
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
@@ -29,6 +31,7 @@ public final class IdempotencyRecord extends AuditMetadata {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
   private String operation;
   private String idempotencyKey;
   private String requestHash;

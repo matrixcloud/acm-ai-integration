@@ -24,8 +24,8 @@ import org.acm.kb.domain.shared.InvalidRequestException;
  *
  * <p>Encapsulates the business invariants for creating a knowledge base: the name must be a
  * non-blank string of at most 100 characters, and the status starts as {@link
- * KnowledgeBaseStatus#ACTIVE}. Document count is maintained by the application service and
- * mutated via {@link #incrementDocCount()}/{@link #decrementDocCount()}.
+ * KnowledgeBaseStatus#ACTIVE}. Document count is maintained by the application service and mutated
+ * via {@link #incrementDocCount()}/{@link #decrementDocCount()}.
  */
 @Entity
 @Table(name = "knowledge_bases")
@@ -40,8 +40,10 @@ public final class KnowledgeBase extends AuditMetadata {
 
   private String kbNo;
   private String name;
+
   @Enumerated(EnumType.STRING)
   private KnowledgeBaseStatus status;
+
   private int docCount;
 
   @Version private Long version;
@@ -75,8 +77,7 @@ public final class KnowledgeBase extends AuditMetadata {
   /** Requires the knowledge base to be active for document uploads. */
   public void requireActive() {
     if (status != KnowledgeBaseStatus.ACTIVE) {
-      throw new KnowledgeBaseNotActiveException(
-          "Knowledge base %s is not active".formatted(kbNo));
+      throw new KnowledgeBaseNotActiveException("Knowledge base %s is not active".formatted(kbNo));
     }
   }
 

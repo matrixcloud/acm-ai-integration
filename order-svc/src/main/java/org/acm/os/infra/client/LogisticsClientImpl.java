@@ -6,9 +6,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.acm.os.application.port.out.ExternalDependencyException;
 import org.acm.os.application.port.out.LogisticsClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Component
 @Profile("demo")
@@ -50,7 +50,8 @@ public class LogisticsClientImpl implements LogisticsClient {
   @Override
   public void confirmReceipt(String trackingNo, String idempotencyKey) {
     failures.check("logistics-confirm");
-    boolean known = shipments.values().stream().anyMatch(value -> value.trackingNo().equals(trackingNo));
+    boolean known =
+        shipments.values().stream().anyMatch(value -> value.trackingNo().equals(trackingNo));
     if (!known) {
       throw new ExternalDependencyException("Unknown tracking number '%s'".formatted(trackingNo));
     }

@@ -9,9 +9,7 @@ import org.acm.ca.application.idempotency.IdempotencyRecordRepository;
 import org.acm.ca.domain.conversation.Conversation;
 import org.acm.ca.domain.conversation.ConversationRepository;
 import org.acm.ca.domain.conversation.ConversationStatus;
-import org.acm.ca.domain.conversation.Feedback;
 import org.acm.ca.domain.conversation.FeedbackRating;
-import org.acm.ca.domain.conversation.Message;
 import org.acm.ca.domain.conversation.MessageRole;
 import org.acm.ca.domain.quickquestion.QuickQuestion;
 import org.acm.ca.domain.quickquestion.QuickQuestionRepository;
@@ -168,8 +166,7 @@ class PostgresPersistenceIntegrationTest {
 
   @Test
   void persistedQuickQuestionsSeedDataExists() {
-    long enabledCount =
-        quickQuestionRepository.findByEnabledTrueOrderBySortOrderAsc().size();
+    long enabledCount = quickQuestionRepository.findByEnabledTrueOrderBySortOrderAsc().size();
     assertThat(enabledCount).isGreaterThanOrEqualTo(5);
     assertThat(
             quickQuestionRepository.findByEnabledTrueOrderBySortOrderAsc().stream()

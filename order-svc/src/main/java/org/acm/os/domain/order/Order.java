@@ -2,10 +2,10 @@ package org.acm.os.domain.order;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -20,17 +20,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.acm.os.domain.shared.AuditMetadata;
-import org.acm.os.domain.shared.BusinessNumberGenerator;
+import lombok.Setter;
 import org.acm.os.domain.payment.Payment;
 import org.acm.os.domain.payment.PaymentStatus;
 import org.acm.os.domain.refund.Refund;
 import org.acm.os.domain.refund.RefundStatus;
 import org.acm.os.domain.refund.RefundType;
+import org.acm.os.domain.shared.AuditMetadata;
+import org.acm.os.domain.shared.BusinessNumberGenerator;
 import org.acm.os.domain.shipment.Shipment;
 import org.acm.os.domain.shipment.ShipmentItem;
 import org.acm.os.domain.shipment.ShipmentStatus;
@@ -57,14 +57,15 @@ public final class Order extends AuditMetadata {
 
   private String orderNo;
   private String customerId;
+
   @Enumerated(EnumType.STRING)
   private OrderStatus status;
+
   private String currency;
 
   private BigDecimal itemTotal;
   private BigDecimal payableTotal;
-  @Setter
-  private String inventoryReservationId;
+  @Setter private String inventoryReservationId;
 
   // Shipping recipient, denormalized into the order for query convenience.
   private String recipientName;
@@ -151,8 +152,7 @@ public final class Order extends AuditMetadata {
     List<OrderItem> copy = new ArrayList<>(newItems.size());
     for (int i = 0; i < newItems.size(); i++) {
       OrderItem item = newItems.get(i);
-      BigDecimal lineAmount =
-          item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+      BigDecimal lineAmount = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
       item.setLineNo(i + 1);
       item.setLineAmount(lineAmount);
       copy.add(item);
@@ -303,18 +303,14 @@ public final class Order extends AuditMetadata {
     requireRefund(refund, refund.getType());
     refund.retry();
     status =
-        refund.getType() == RefundType.AUTO_CANCEL
-            ? OrderStatus.CANCELING
-            : OrderStatus.REFUNDING;
+        refund.getType() == RefundType.AUTO_CANCEL ? OrderStatus.CANCELING : OrderStatus.REFUNDING;
   }
 
   public void completeRefund(Refund refund) {
     requireRefund(refund, refund.getType());
     refund.complete();
     status =
-        refund.getType() == RefundType.AUTO_CANCEL
-            ? OrderStatus.CANCELED
-            : OrderStatus.REFUNDED;
+        refund.getType() == RefundType.AUTO_CANCEL ? OrderStatus.CANCELED : OrderStatus.REFUNDED;
   }
 
   public void failRefund(Refund refund) {
@@ -329,7 +325,8 @@ public final class Order extends AuditMetadata {
   public void allocateShipment(Shipment shipment) {
     if (status != OrderStatus.PAID && status != OrderStatus.PARTIALLY_SHIPPED) {
       if (hasShippedItems() || status == OrderStatus.SHIPPED || status == OrderStatus.COMPLETED) {
-        throw new OrderNotRefundableException("Order '%s' has already been shipped".formatted(orderNo));
+        throw new OrderNotRefundableException(
+            "Order '%s' has already been shipped".formatted(orderNo));
       }
       throw new OrderStateConflictException(
           "Order status %s does not allow shipment".formatted(status));
@@ -342,7 +339,8 @@ public final class Order extends AuditMetadata {
   public void validateShipmentItems(List<ShipmentItem> shipmentItems) {
     if (status != OrderStatus.PAID && status != OrderStatus.PARTIALLY_SHIPPED) {
       if (hasShippedItems() || status == OrderStatus.SHIPPED || status == OrderStatus.COMPLETED) {
-        throw new OrderNotRefundableException("Order '%s' has already been shipped".formatted(orderNo));
+        throw new OrderNotRefundableException(
+            "Order '%s' has already been shipped".formatted(orderNo));
       }
       throw new OrderStateConflictException(
           "Order status %s does not allow shipment".formatted(status));
@@ -353,8 +351,7 @@ public final class Order extends AuditMetadata {
     long distinctOrderItems =
         shipmentItems.stream().map(ShipmentItem::getOrderItemId).distinct().count();
     if (distinctOrderItems != shipmentItems.size()) {
-      throw new ShipmentQuantityExceededException(
-          "Shipment contains duplicate order item IDs");
+      throw new ShipmentQuantityExceededException("Shipment contains duplicate order item IDs");
     }
     for (ShipmentItem shipmentItem : shipmentItems) {
       OrderItem orderItem =
@@ -387,7 +384,9 @@ public final class Order extends AuditMetadata {
             .filter(value -> value.getShipmentNo().equals(shipmentNo))
             .findFirst()
             .orElseThrow(
-                () -> new OrderStateConflictException("Shipment '%s' does not exist".formatted(shipmentNo)));
+                () ->
+                    new OrderStateConflictException(
+                        "Shipment '%s' does not exist".formatted(shipmentNo)));
     shipment.deliver();
     if (status == OrderStatus.SHIPPED
         && shipments.stream().allMatch(value -> value.getStatus() == ShipmentStatus.DELIVERED)) {
@@ -399,21 +398,29 @@ public final class Order extends AuditMetadata {
     return payments.stream()
         .filter(payment -> payment.getPaymentNo().equals(paymentNo))
         .findFirst()
-        .orElseThrow(() -> new OrderStateConflictException("Payment '%s' does not exist".formatted(paymentNo)));
+        .orElseThrow(
+            () ->
+                new OrderStateConflictException(
+                    "Payment '%s' does not exist".formatted(paymentNo)));
   }
 
   public Refund refund(String refundNo) {
     return refunds.stream()
         .filter(refund -> refund.getRefundNo().equals(refundNo))
         .findFirst()
-        .orElseThrow(() -> new OrderStateConflictException("Refund '%s' does not exist".formatted(refundNo)));
+        .orElseThrow(
+            () ->
+                new OrderStateConflictException("Refund '%s' does not exist".formatted(refundNo)));
   }
 
   public Shipment shipment(String shipmentNo) {
     return shipments.stream()
         .filter(shipment -> shipment.getShipmentNo().equals(shipmentNo))
         .findFirst()
-        .orElseThrow(() -> new OrderStateConflictException("Shipment '%s' does not exist".formatted(shipmentNo)));
+        .orElseThrow(
+            () ->
+                new OrderStateConflictException(
+                    "Shipment '%s' does not exist".formatted(shipmentNo)));
   }
 
   private void assertRefundable() {
@@ -421,7 +428,8 @@ public final class Order extends AuditMetadata {
         || status == OrderStatus.PARTIALLY_SHIPPED
         || status == OrderStatus.SHIPPED
         || status == OrderStatus.COMPLETED) {
-      throw new OrderNotRefundableException("Order '%s' has already been shipped".formatted(orderNo));
+      throw new OrderNotRefundableException(
+          "Order '%s' has already been shipped".formatted(orderNo));
     }
   }
 
@@ -446,8 +454,7 @@ public final class Order extends AuditMetadata {
   }
 
   private boolean allItemsAllocated() {
-    return items.stream()
-        .allMatch(item -> shippedQuantity(item.getId()) == item.getQuantity());
+    return items.stream().allMatch(item -> shippedQuantity(item.getId()) == item.getQuantity());
   }
 
   private void requireRefund(Refund refund, RefundType expectedType) {
@@ -463,7 +470,9 @@ public final class Order extends AuditMetadata {
     }
   }
 
-  /** @return an order number with the {@code ORD} prefix */
+  /**
+   * @return an order number with the {@code ORD} prefix
+   */
   private static String generateOrderNo() {
     return BusinessNumberGenerator.generate("ORD");
   }

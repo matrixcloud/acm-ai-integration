@@ -2,7 +2,9 @@ package org.acm.ca.application.port.out;
 
 import java.util.List;
 
-/** Outbound port for knowledge-base retrieval, realized by an HTTP adapter calling {@code kb-svc}. */
+/**
+ * Outbound port for knowledge-base retrieval, realized by an HTTP adapter calling {@code kb-svc}.
+ */
 public interface KbSearchClient {
 
   List<KbChunk> search(SearchRequest request);

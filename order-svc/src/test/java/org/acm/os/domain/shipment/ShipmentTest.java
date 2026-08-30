@@ -11,13 +11,13 @@ class ShipmentTest {
   @Test
   void validatesItemsAndDeliveryIsIdempotent() {
     assertThatThrownBy(() -> ShipmentItem.of(null, 1)).isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> ShipmentItem.of(1L, null)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> ShipmentItem.of(1L, null))
+        .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> ShipmentItem.of(1L, 0)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Shipment.create("S", "C", "T", List.of()))
         .isInstanceOf(IllegalArgumentException.class);
 
-    Shipment shipment =
-        Shipment.create("S", "MOCK_EXPRESS", "T", List.of(ShipmentItem.of(1L, 1)));
+    Shipment shipment = Shipment.create("S", "MOCK_EXPRESS", "T", List.of(ShipmentItem.of(1L, 1)));
     shipment.deliver();
     shipment.deliver();
     assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELIVERED);

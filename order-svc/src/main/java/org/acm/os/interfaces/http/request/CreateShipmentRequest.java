@@ -16,6 +16,9 @@ public class CreateShipmentRequest {
   @Data
   public static class Item {
     @NotNull private Long orderItemId;
-    @NotNull @Min(1) private Integer quantity;
+
+    @NotNull
+    @Min(1)
+    private Integer quantity;
   }
 }

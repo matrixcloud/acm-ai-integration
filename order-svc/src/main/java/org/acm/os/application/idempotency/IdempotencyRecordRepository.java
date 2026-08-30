@@ -10,5 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * request.
  */
 public interface IdempotencyRecordRepository extends JpaRepository<IdempotencyRecord, Long> {
-  Optional<IdempotencyRecord> findByOperationAndIdempotencyKey(String operation, String idempotencyKey);
+  Optional<IdempotencyRecord> findByOperationAndIdempotencyKey(
+      String operation, String idempotencyKey);
 }

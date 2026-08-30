@@ -11,8 +11,8 @@ import lombok.Data;
  * Application-layer input for the create-order use case.
  *
  * <p>Carries all data needed to construct a {@link org.acm.os.domain.order.Order}; pricing
- * authority is the server (design §6.2: "所有金额都来自商品价格快照并由服务端计算。请求方不得提交
- * 单价、订单总额或退款金额"), so no price fields are accepted.
+ * authority is the server (design §6.2: "所有金额都来自商品价格快照并由服务端计算。请求方不得提交 单价、订单总额或退款金额"), so no price
+ * fields are accepted.
  */
 @Data
 public class CreateOrderCommand {
@@ -31,7 +31,9 @@ public class CreateOrderCommand {
   @Data
   public static class OrderLine {
     @NotBlank private String skuId;
-    @NotNull @Min(1)
+
+    @NotNull
+    @Min(1)
     private Integer quantity;
   }
 }

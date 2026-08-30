@@ -8,5 +8,7 @@ import lombok.Data;
 public class StartEvalRunRequest {
   @NotBlank private String kbNo;
   @NotBlank private String suiteNo;
-  @Min(1) private int topK;
+
+  @Min(1)
+  private int topK;
 }

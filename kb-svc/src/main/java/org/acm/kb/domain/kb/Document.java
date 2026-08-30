@@ -22,8 +22,8 @@ import org.acm.kb.domain.shared.AuditMetadata;
  * A document within a knowledge base.
  *
  * <p>Created in {@link DocumentStatus#PROCESSING} on upload; transitions to {@link
- * DocumentStatus#READY} once chunking and vectorization succeed, or {@link
- * DocumentStatus#FAILED} on embedding error.
+ * DocumentStatus#READY} once chunking and vectorization succeed, or {@link DocumentStatus#FAILED}
+ * on embedding error.
  */
 @Entity
 @Table(name = "documents")
@@ -39,8 +39,10 @@ public final class Document extends AuditMetadata {
   private String documentNo;
   private Long kbId;
   private String name;
+
   @Enumerated(EnumType.STRING)
   private DocumentStatus status;
+
   private int chunkCount;
 
   @Version private Long version;

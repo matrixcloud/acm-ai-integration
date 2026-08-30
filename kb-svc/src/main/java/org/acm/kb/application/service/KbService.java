@@ -39,8 +39,8 @@ import org.springframework.web.multipart.MultipartFile;
  *
  * <p>Orchestrates the document upload pipeline: validate the knowledge base is active, persist a
  * {@code PROCESSING} document record, read the file with a type-appropriate reader (Markdown or
- * plain text), split paragraphs with the configured {@link TextSplitter}, embed and store
- * chunks in pgvector, persist chunk metadata, then mark the document {@code READY}.
+ * plain text), split paragraphs with the configured {@link TextSplitter}, embed and store chunks in
+ * pgvector, persist chunk metadata, then mark the document {@code READY}.
  */
 @Service
 @RequiredArgsConstructor
@@ -150,9 +150,7 @@ public class KbService implements KbUseCase {
         documentRepository
             .findByDocumentNo(docNo)
             .orElseThrow(
-                () ->
-                    new DocumentNotFoundException(
-                        "Document %s not found".formatted(docNo)));
+                () -> new DocumentNotFoundException("Document %s not found".formatted(docNo)));
     if (!doc.getKbId().equals(kb.getId())) {
       throw new DocumentNotFoundException(
           "Document %s does not belong to knowledge base %s".formatted(docNo, kbNo));
@@ -217,7 +215,8 @@ public class KbService implements KbUseCase {
     return knowledgeBaseRepository
         .findByKbNo(kbNo)
         .orElseThrow(
-            () -> new KnowledgeBaseNotFoundException("Knowledge base %s not found".formatted(kbNo)));
+            () ->
+                new KnowledgeBaseNotFoundException("Knowledge base %s not found".formatted(kbNo)));
   }
 
   private String readFileContent(MultipartFile file) {
@@ -234,14 +233,14 @@ public class KbService implements KbUseCase {
   private List<org.springframework.ai.document.Document> readParagraphs(
       MultipartFile file, String content) {
     String filename = file.getOriginalFilename();
-    String extension = filename != null && filename.contains(".")
-        ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
-        : "txt";
+    String extension =
+        filename != null && filename.contains(".")
+            ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+            : "txt";
     DocumentReader reader;
     ByteArrayResource resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
     if ("md".equals(extension) || "markdown".equals(extension)) {
-      reader =
-          new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.defaultConfig());
+      reader = new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.defaultConfig());
     } else if ("txt".equals(extension)) {
       reader = new TextReader(resource);
     } else {

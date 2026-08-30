@@ -84,9 +84,7 @@ public class ConversationController {
    * validation) reject before the stream is established; once streaming, all business and
    * external-dependency failures are reported in-band via the {@code error} event.
    */
-  @PostMapping(
-      value = "/{conversationNo}/messages",
-      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @PostMapping(value = "/{conversationNo}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter sendMessage(
       @PathVariable String conversationNo,
       @Valid @RequestBody SendMessageRequest request,
@@ -113,8 +111,7 @@ public class ConversationController {
   public ResponseEntity<ConversationDetailResponse> endConversation(
       @PathVariable String conversationNo,
       @RequestHeader("Idempotency-Key") String idempotencyKey) {
-    Conversation conversation =
-        conversationService.endConversation(conversationNo, idempotencyKey);
+    Conversation conversation = conversationService.endConversation(conversationNo, idempotencyKey);
     return ResponseEntity.status(HttpStatus.ACCEPTED)
         .body(responseMapper.toDetailResponse(conversation));
   }
@@ -129,5 +126,4 @@ public class ConversationController {
             requestMapper.toCommand(conversationNo, request), idempotencyKey);
     return ResponseEntity.ok(responseMapper.toDetailResponse(conversation));
   }
-
 }

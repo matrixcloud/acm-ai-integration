@@ -9,7 +9,11 @@ import lombok.Data;
 @Data
 public class SetProductRequest {
   @NotBlank private String productName;
-  @NotNull @DecimalMin("0.00") private BigDecimal unitPrice;
+
+  @NotNull
+  @DecimalMin("0.00")
+  private BigDecimal unitPrice;
+
   @NotBlank private String currency;
   @NotNull private Boolean saleable;
 }

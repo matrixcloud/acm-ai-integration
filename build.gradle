@@ -1,7 +1,7 @@
 plugins {
     id 'base'
+    id 'com.diffplug.spotless' version '8.10.1'
 }
-
 allprojects {
     group = 'org.acm'
     version = '0.0.1-SNAPSHOT'
@@ -32,6 +32,14 @@ subprojects {
         java {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(17)
+            }
+        }
+
+        apply plugin: 'com.diffplug.spotless'
+        spotless {
+            java {
+                target 'src/**/*.java'
+                googleJavaFormat('1.28.0')
             }
         }
 

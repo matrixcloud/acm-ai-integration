@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 /**
- * Observes each iteration of the tool-calling loop. Runs inside {@code ToolCallingAdvisor}
- * (order {@code HIGHEST_PRECEDENCE + 300}) so it can count tool-call requests and final answers.
+ * Observes each iteration of the tool-calling loop. Runs inside {@code ToolCallingAdvisor} (order
+ * {@code HIGHEST_PRECEDENCE + 300}) so it can count tool-call requests and final answers.
  */
 @Component
 public class ToolCallObservingAdvisor implements CallAdvisor, StreamAdvisor {
@@ -48,7 +48,8 @@ public class ToolCallObservingAdvisor implements CallAdvisor, StreamAdvisor {
   }
 
   @Override
-  public Flux<ChatClientResponse> adviseStream(ChatClientRequest request, StreamAdvisorChain chain) {
+  public Flux<ChatClientResponse> adviseStream(
+      ChatClientRequest request, StreamAdvisorChain chain) {
     return chain.nextStream(request).doOnNext(this::observe);
   }
 

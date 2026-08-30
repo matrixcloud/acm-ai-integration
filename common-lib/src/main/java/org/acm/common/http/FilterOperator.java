@@ -1,19 +1,19 @@
 package org.acm.common.http;
 
 public enum FilterOperator {
-    EQ,
-    NE,
+  EQ,
+  NE,
 
-    GT,
-    GTE,
-    LT,
-    LTE,
+  GT,
+  GTE,
+  LT,
+  LTE,
 
-    IN,
-    BETWEEN,
+  IN,
+  BETWEEN,
 
-    CONTAINS,
+  CONTAINS,
 
-    IS_NULL,
-    IS_NOT_NULL
+  IS_NULL,
+  IS_NOT_NULL
 }

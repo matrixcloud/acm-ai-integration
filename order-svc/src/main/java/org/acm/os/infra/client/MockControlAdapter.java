@@ -16,11 +16,7 @@ public class MockControlAdapter implements MockControlPort {
 
   @Override
   public void setProduct(
-      String skuId,
-      String productName,
-      BigDecimal unitPrice,
-      String currency,
-      boolean saleable) {
+      String skuId, String productName, BigDecimal unitPrice, String currency, boolean saleable) {
     productCatalog.setProduct(skuId, productName, unitPrice, currency, saleable);
   }
 

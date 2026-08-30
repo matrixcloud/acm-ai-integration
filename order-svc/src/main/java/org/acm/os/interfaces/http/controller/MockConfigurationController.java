@@ -10,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,8 +47,7 @@ public class MockConfigurationController {
 
   @PutMapping("/failures/{capability}")
   public ResponseEntity<Void> failNext(
-      @PathVariable String capability,
-      @RequestHeader("Idempotency-Key") String idempotencyKey) {
+      @PathVariable String capability, @RequestHeader("Idempotency-Key") String idempotencyKey) {
     mockConfiguration.failNext(capability, idempotencyKey);
     return ResponseEntity.noContent().build();
   }

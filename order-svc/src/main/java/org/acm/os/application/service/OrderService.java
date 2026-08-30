@@ -30,8 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Default {@link OrderUseCase} implementation.
  *
- * <p>{@link #create} is guarded by {@link IdempotencyService}: same key + same request replays
- * the cached {@link Order}; the idempotency guard record shares one transaction with the business
+ * <p>{@link #create} is guarded by {@link IdempotencyService}: same key + same request replays the
+ * cached {@link Order}; the idempotency guard record shares one transaction with the business
  * action, so a failed attempt rolls back completely.
  *
  * <p>create-order workflow (design §8.1):
@@ -104,7 +104,10 @@ public class OrderService implements OrderUseCase {
       } catch (RuntimeException releaseFailure) {
         // Never mask the original persistence failure with a compensation failure.
         log.error(
-            "Failed to release inventory reservation '{}' for order {}", reservationId, orderNo, releaseFailure);
+            "Failed to release inventory reservation '{}' for order {}",
+            reservationId,
+            orderNo,
+            releaseFailure);
         e.addSuppressed(releaseFailure);
       }
       throw e;
@@ -117,16 +120,18 @@ public class OrderService implements OrderUseCase {
     PageRequest pageRequest =
         PageRequest.of(query.getPage() - 1, query.getSize(), buildSort(query));
     return query.getStatus() == null
-            ? orderRepository.findByCustomerId(query.getCustomerId(), pageRequest)
-            : orderRepository.findByCustomerIdAndStatus(
-                query.getCustomerId(), query.getStatus(), pageRequest);
+        ? orderRepository.findByCustomerId(query.getCustomerId(), pageRequest)
+        : orderRepository.findByCustomerIdAndStatus(
+            query.getCustomerId(), query.getStatus(), pageRequest);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Order get(String orderNo) {
-    Order order = orderRepository.findByOrderNo(orderNo)
-        .orElseThrow(() -> new org.acm.os.domain.order.OrderNotFoundException(orderNo));
+    Order order =
+        orderRepository
+            .findByOrderNo(orderNo)
+            .orElseThrow(() -> new org.acm.os.domain.order.OrderNotFoundException(orderNo));
     initializeDetails(order);
     return order;
   }
@@ -157,8 +162,7 @@ public class OrderService implements OrderUseCase {
     try {
       return Sort.Direction.fromString(direction);
     } catch (IllegalArgumentException e) {
-      throw new InvalidRequestException(
-          "Unsupported sort direction '%s'".formatted(direction));
+      throw new InvalidRequestException("Unsupported sort direction '%s'".formatted(direction));
     }
   }
 
@@ -167,8 +171,8 @@ public class OrderService implements OrderUseCase {
    * snapshot (name, unit price, currency).
    *
    * <p>Pricing authority is the server (design §6.2), so item construction merges command
-   * quantities with catalog snapshots. {@code lineNo} and {@code lineAmount} are intentionally
-   * left unset — they are derived and set by {@link Order#replaceItems(List)}.
+   * quantities with catalog snapshots. {@code lineNo} and {@code lineAmount} are intentionally left
+   * unset — they are derived and set by {@link Order#replaceItems(List)}.
    *
    * @throws DuplicateSkuException if the command contains repeated SKU IDs
    * @throws CurrencyMismatchException if an item's currency differs from the order currency

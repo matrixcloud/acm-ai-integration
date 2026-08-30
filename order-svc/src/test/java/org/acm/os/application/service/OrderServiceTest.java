@@ -274,8 +274,7 @@ class OrderServiceTest {
     return new ProductSnapshot(skuId, name, new BigDecimal(price), currency);
   }
 
-  private static SearchOrderQuery query(
-      OrderStatus status, String sortBy, String direction) {
+  private static SearchOrderQuery query(OrderStatus status, String sortBy, String direction) {
     SearchOrderQuery query = new SearchOrderQuery();
     query.setCustomerId("customer-1");
     query.setStatus(status);

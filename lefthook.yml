@@ -1,0 +1,23 @@
+glob_matcher: doublestar
+
+pre-commit:
+  parallel: true
+  commands:
+    customer-app-lint:
+      root: "webapps/customer-app"
+      run: pnpm run lint
+      glob: "webapps/customer-app/**/*.{ts,tsx,js,jsx}"
+    kb-app-lint:
+      root: "webapps/kb-app"
+      run: pnpm run lint
+      glob: "webapps/kb-app/**/*.{ts,tsx,js,jsx}"
+
+pre-push:
+  commands:
+    backend-format-check:
+      run: ./gradlew spotlessCheck -q
+    backend-test:
+      run: ./gradlew test
+    frontend-test:
+      root: "webapps"
+      run: pnpm -r test

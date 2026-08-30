@@ -17,7 +17,6 @@ import java.util.List;
 import org.acm.ca.application.port.out.OrderQueryClient;
 import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
 import org.acm.ca.application.port.out.OrderQueryContractException;
-import org.acm.ca.application.port.out.OrderQueryUnavailableException;
 import org.acm.ca.application.port.out.TransientOrderQueryException;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -59,7 +58,8 @@ class OrderQueryClientImplTest {
   @Test
   void getRecentOrdersCallsOrderServiceAndMapsResponse() {
     Fixture fixture = fixture();
-    fixture.server()
+    fixture
+        .server()
         .expect(requestTo(REQUEST_URL))
         .andExpect(method(HttpMethod.GET))
         .andExpect(header("API-Version", "1"))
@@ -85,7 +85,9 @@ class OrderQueryClientImplTest {
   @Test
   void getRecentOrdersReturnsEmptyWhenItemsIsEmpty() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
 
     assertThat(fixture.client().getRecentOrders("customer-001")).isEmpty();
@@ -95,7 +97,9 @@ class OrderQueryClientImplTest {
   @Test
   void getRecentOrdersRejectsMissingItems() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
     assertThatThrownBy(() -> fixture.client().getRecentOrders("customer-001"))
@@ -109,7 +113,9 @@ class OrderQueryClientImplTest {
   @Test
   void getRecentOrdersRejectsMissingResponseBody() {
     Fixture fixture = fixture();
-    fixture.server().expect(requestTo(REQUEST_URL))
+    fixture
+        .server()
+        .expect(requestTo(REQUEST_URL))
         .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
     assertThatThrownBy(() -> fixture.client().getRecentOrders("customer-001"))
@@ -132,10 +138,14 @@ class OrderQueryClientImplTest {
   @Test
   void retriesOnceOnServiceUnavailableThenSucceeds() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withSuccess(PAGE_JSON, MediaType.APPLICATION_JSON));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withSuccess(PAGE_JSON, MediaType.APPLICATION_JSON));
 
       List<OrderSummary> result = fixture.client().getRecentOrders("customer-001");
 
@@ -148,8 +158,10 @@ class OrderQueryClientImplTest {
   @Test
   void doesNotRetryOnBadRequest() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.BAD_REQUEST));
 
       assertThatThrownBy(() -> fixture.client().getRecentOrders("customer-001"))
           .isInstanceOfSatisfying(
@@ -163,10 +175,14 @@ class OrderQueryClientImplTest {
   @Test
   void throwsStableExceptionAfterRetriesExhaustedWithinBudget() {
     try (RetryFixture fixture = retryFixture()) {
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
-      fixture.server()
-          .expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+      fixture
+          .server()
+          .expect(once(), requestTo(REQUEST_URL))
+          .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
       long start = System.nanoTime();
       assertThatThrownBy(() -> fixture.client().getRecentOrders("customer-001"))
@@ -194,8 +210,8 @@ class OrderQueryClientImplTest {
   }
 
   /**
-   * Boots the {@code @Retryable} proxy through {@code @EnableResilientMethods} so retry behavior
-   * is exercised exactly as in production, while the HTTP layer stays on the mock server.
+   * Boots the {@code @Retryable} proxy through {@code @EnableResilientMethods} so retry behavior is
+   * exercised exactly as in production, while the HTTP layer stays on the mock server.
    */
   private RetryFixture retryFixture() {
     RestClient.Builder builder = RestClient.builder().baseUrl("http://order-svc");
@@ -215,7 +231,9 @@ class OrderQueryClientImplTest {
   private record Fixture(OrderQueryClientImpl client, MockRestServiceServer server) {}
 
   private record RetryFixture(
-      OrderQueryClient client, MockRestServiceServer server, AnnotationConfigApplicationContext context)
+      OrderQueryClient client,
+      MockRestServiceServer server,
+      AnnotationConfigApplicationContext context)
       implements AutoCloseable {
 
     @Override

@@ -38,6 +38,11 @@ tasks:
     cmds:
       - ./gradlew test {{.CLI_ARGS}}
 
+  format:
+    desc: "格式化全部 Java 源码（google-java-format）"
+    cmds:
+      - ./gradlew spotlessApply
+
   test-svc:
     desc: "运行单个服务测试（用法: task test-svc SVC=order-svc）"
     vars:
@@ -156,16 +161,16 @@ tasks:
       - pnpm run build
 
   web:test:
-    desc: "运行前端测试（Vitest）"
-    dir: "{{.FRONTEND_DIR}}"
+    desc: "运行前端测试（Vitest，所有 app）"
+    dir: "webapps"
     cmds:
-      - pnpm run test
+      - pnpm -r test
 
   web:lint:
-    desc: "前端 ESLint 检查"
-    dir: "{{.FRONTEND_DIR}}"
+    desc: "前端 ESLint 检查（所有 app）"
+    dir: "webapps"
     cmds:
-      - pnpm run lint
+      - pnpm -r lint
 
   web:install:
     desc: "安装前端依赖"
@@ -176,9 +181,9 @@ tasks:
   # ─────────────────────── 一站式工作流 ───────────────────────
 
   check:
-    desc: "全量检查：后端 test + 前端 lint + 前端 test"
+    desc: "全量检查：后端 spotless + test + 前端 lint + 前端 test"
     cmds:
-      - ./gradlew test
+      - ./gradlew spotlessCheck test
       - task: web:lint
       - task: web:test
 

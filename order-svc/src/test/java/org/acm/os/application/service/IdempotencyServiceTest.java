@@ -10,14 +10,14 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.acm.os.application.exception.IdempotencyKeyReuseException;
+import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.application.exception.ReservedByConcurrentWriterException;
 import org.acm.os.application.exception.RetryableOperationException;
-import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.application.idempotency.IdempotencyRecord;
 import org.acm.os.application.idempotency.IdempotencyRecordRepository;
 import org.acm.os.domain.shared.InvalidRequestException;
@@ -114,13 +114,7 @@ class IdempotencyServiceTest {
   void executeRejectsPendingOperation() {
     IdempotencyRecord pending =
         new IdempotencyRecord(
-            1L,
-            OPERATION,
-            KEY,
-            sha256(REQUEST_JSON),
-            null,
-            null,
-            IdempotencyRecord.STATUS_PENDING);
+            1L, OPERATION, KEY, sha256(REQUEST_JSON), null, null, IdempotencyRecord.STATUS_PENDING);
     when(objectMapper.writeValueAsString(REQUEST)).thenReturn(REQUEST_JSON);
     when(repository.findByOperationAndIdempotencyKey(OPERATION, KEY))
         .thenReturn(Optional.of(pending));
@@ -220,8 +214,7 @@ class IdempotencyServiceTest {
     Map<String, Object> secondRequest = new LinkedHashMap<>();
     secondRequest.put("quantity", 2);
     secondRequest.put("skuId", "SKU-1");
-    ArgumentCaptor<IdempotencyRecord> records =
-        ArgumentCaptor.forClass(IdempotencyRecord.class);
+    ArgumentCaptor<IdempotencyRecord> records = ArgumentCaptor.forClass(IdempotencyRecord.class);
 
     canonicalService.execute(
         new IdempotencyService.IdempotentOperation<>(
@@ -243,13 +236,7 @@ class IdempotencyServiceTest {
 
   private static IdempotencyRecord completedRecord(String requestHash) {
     return new IdempotencyRecord(
-        1L,
-        OPERATION,
-        KEY,
-        requestHash,
-        "\"created\"",
-        null,
-        IdempotencyRecord.STATUS_COMPLETED);
+        1L, OPERATION, KEY, requestHash, "\"created\"", null, IdempotencyRecord.STATUS_COMPLETED);
   }
 
   private static String sha256(String value) {

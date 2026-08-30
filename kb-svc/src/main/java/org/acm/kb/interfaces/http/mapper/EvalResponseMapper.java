@@ -29,9 +29,11 @@ public interface EvalResponseMapper {
     response.setStartedAt(run.getStartedAt());
     response.setFinishedAt(run.getFinishedAt());
     EvalRunResponse.Metrics metrics = new EvalRunResponse.Metrics();
-    metrics.setContextRelevancy(toMetric(run.getContextRelevancyAvg(), run.getContextRelevancyPassRate()));
+    metrics.setContextRelevancy(
+        toMetric(run.getContextRelevancyAvg(), run.getContextRelevancyPassRate()));
     metrics.setFaithfulness(toMetric(run.getFaithfulnessAvg(), run.getFaithfulnessPassRate()));
-    metrics.setAnswerRelevancy(toMetric(run.getAnswerRelevancyAvg(), run.getAnswerRelevancyPassRate()));
+    metrics.setAnswerRelevancy(
+        toMetric(run.getAnswerRelevancyAvg(), run.getAnswerRelevancyPassRate()));
     response.setMetrics(metrics);
     response.setDetails(
         details.stream()

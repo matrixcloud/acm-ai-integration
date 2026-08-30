@@ -1,8 +1,8 @@
 package org.acm.ca.domain.shared;
 
 /**
- * Base class for business rule violations. Carries a stable error {@code code} that
- * {@code GlobalExceptionHandler} maps to an HTTP status.
+ * Base class for business rule violations. Carries a stable error {@code code} that {@code
+ * GlobalExceptionHandler} maps to an HTTP status.
  */
 public abstract class BusinessException extends RuntimeException {
   private final String code;

@@ -51,6 +51,7 @@ acm-ai-integration/
 - Node.js 22 + pnpm 11.10.0
 - Docker + Docker Compose（PostgreSQL / Redis）
 - [go-task](https://taskfile.dev)（可选，推荐；`Taskfile.yml` 封装了常用命令）
+- [lefthook](https://lefthook.dev)（Git 钩子；`brew install lefthook`）
 - 环境变量 `DASHSCOPE_API_KEY`（AI 相关服务需要）
 
 ## 快速开始
@@ -123,7 +124,7 @@ task up / down / logs        # 基础设施启停与日志
 task build                   # 构建全部后端（跳过测试）
 task test                    # 运行全部后端单测
 task test-svc SVC=order-svc  # 运行单个服务测试
-task check                   # 后端 test + 前端 lint + 前端 test
+task check                   # spotlessCheck + 后端 test + 前端 lint/test
 task run SVC=<svc>           # 运行单个后端服务
 task web APP=<app>           # 启动前端开发服务器
 task web:build               # 构建前端生产包（customer-app）
@@ -139,6 +140,21 @@ task build-all-images        # 构建全部应用镜像
 - 集成测试：`order-svc` 与 `customer-agent` 含 PostgreSQL 集成测试（Testcontainers），随 `check` / `build` 执行
 - 覆盖率：Jacoco；`customer-agent` 与 `order-svc` 对 `domain` / `application` 层设了覆盖率门禁（`check` 时验证）
 - 前端测试：Vitest，`task web:test`
+
+## Git 钩子（提交前检查）
+
+仓库用 [lefthook](https://lefthook.dev) 管理 Git 钩子，新 clone 后执行一次启用：
+
+```bash
+lefthook install
+```
+
+- `pre-commit`：秒级快检，仅跑前端 ESLint（`--max-warnings=0`，两个 app）
+- `pre-push`：`spotlessCheck`（Java 格式）+ 后端单测 + 前端测试
+
+手动命令：`task check`（全量：spotlessCheck + 后端 test + 前端 lint / test）、`task format`（格式化 Java）。
+
+> 本地钩子属便捷快检，可被 `git commit --no-verify` 或 `LEFTHOOK=0` 跳过；**强制门禁在 CI**（`.github/workflows/ci.yml`），push / PR 时无条件跑 `spotlessCheck` + 测试。
 
 ## 构建应用镜像
 

@@ -28,9 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * REST controller for knowledge-base management, document upload, and similarity search.
- */
+/** REST controller for knowledge-base management, document upload, and similarity search. */
 @RestController
 @RequestMapping("/kbs")
 @RequiredArgsConstructor

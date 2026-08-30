@@ -5,8 +5,8 @@ package org.acm.os.domain.shared;
  *
  * <p>Carries a stable error {@code code} that {@code GlobalExceptionHandler} maps to an HTTP
  * status, so layer errors stay decoupled from transport concerns. Lives in {@code domain.shared}
- * (not under a single capability package) because domain, application, and adapter layers all
- * throw it.
+ * (not under a single capability package) because domain, application, and adapter layers all throw
+ * it.
  */
 public abstract class BusinessException extends RuntimeException {
   private final String code;

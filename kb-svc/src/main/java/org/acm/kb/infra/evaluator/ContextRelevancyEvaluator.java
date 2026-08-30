@@ -46,10 +46,8 @@ public class ContextRelevancyEvaluator implements Evaluator {
   @Override
   public EvaluationResponse evaluate(EvaluationRequest request) {
     String context = doGetSupportingData(request);
-    String userMessage =
-        PROMPT.render(Map.of("query", request.getUserText(), "context", context));
-    String result =
-        chatClientBuilder.build().prompt().user(userMessage).call().content();
+    String userMessage = PROMPT.render(Map.of("query", request.getUserText(), "context", context));
+    String result = chatClientBuilder.build().prompt().user(userMessage).call().content();
     boolean pass = "yes".equalsIgnoreCase(result != null ? result.strip() : "");
     return new EvaluationResponse(pass, pass ? 1f : 0f, "", Map.of());
   }

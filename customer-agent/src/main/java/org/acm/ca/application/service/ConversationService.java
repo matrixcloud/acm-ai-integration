@@ -79,7 +79,8 @@ public class ConversationService implements ConversationUseCase {
                     new GenerateReplyCommand.MessageContext(
                         m.getRole().name(), m.getContent(), m.getCreatedAt()))
             .toList();
-    List<OrderSummary> recentOrders = orderQueryClient.getRecentOrders(conversation.getCustomerId());
+    List<OrderSummary> recentOrders =
+        orderQueryClient.getRecentOrders(conversation.getCustomerId());
     List<GenerateReplyCommand.OrderSummary> commandOrders =
         recentOrders.stream()
             .map(
@@ -106,7 +107,8 @@ public class ConversationService implements ConversationUseCase {
     }
     conversation.addAgentReply(agentStream.fullContent());
     conversationRepository.saveAndFlush(conversation);
-    return new MessageThread(conversation.getConversationNo(), List.copyOf(conversation.getMessages()));
+    return new MessageThread(
+        conversation.getConversationNo(), List.copyOf(conversation.getMessages()));
   }
 
   @Override
@@ -147,7 +149,10 @@ public class ConversationService implements ConversationUseCase {
   @Transactional(readOnly = true)
   public Page<Conversation> search(SearchConversationQuery query) {
     PageRequest pageRequest =
-        PageRequest.of(query.getPage() - 1, query.getSize(), Sort.by(DEFAULT_SORT_DIRECTION, DEFAULT_SORT_FIELD));
+        PageRequest.of(
+            query.getPage() - 1,
+            query.getSize(),
+            Sort.by(DEFAULT_SORT_DIRECTION, DEFAULT_SORT_FIELD));
     return query.getStatus() == null
         ? conversationRepository.findByCustomerId(query.getCustomerId(), pageRequest)
         : conversationRepository.findByCustomerIdAndStatus(
@@ -173,9 +178,9 @@ public class ConversationService implements ConversationUseCase {
 
   /**
    * Forwards agent tokens to the business stream while capturing the aggregated reply. An agent
-   * stream error is converted to a thrown exception so the surrounding idempotent transaction
-   * rolls back; the agent's own error code (e.g. {@code LLM_UNAVAILABLE}) is preserved so the
-   * SSE {@code error} event reports it verbatim instead of the port's transport-level code.
+   * stream error is converted to a thrown exception so the surrounding idempotent transaction rolls
+   * back; the agent's own error code (e.g. {@code LLM_UNAVAILABLE}) is preserved so the SSE {@code
+   * error} event reports it verbatim instead of the port's transport-level code.
    */
   private static final class ForwardingAgentStream implements ReplyStream {
 

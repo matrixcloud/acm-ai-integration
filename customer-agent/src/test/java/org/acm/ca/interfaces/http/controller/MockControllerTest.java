@@ -24,8 +24,7 @@ class MockControllerTest {
     MockController controller = new MockController(quickQuestionRepository);
 
     QuickQuestion result =
-        controller.addQuickQuestion(
-            new MockController.AddQuickQuestionRequest(10, "如何修改密码？"));
+        controller.addQuickQuestion(new MockController.AddQuickQuestionRequest(10, "如何修改密码？"));
 
     ArgumentCaptor<QuickQuestion> captor = ArgumentCaptor.forClass(QuickQuestion.class);
     verify(quickQuestionRepository).save(captor.capture());

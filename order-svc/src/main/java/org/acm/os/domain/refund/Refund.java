@@ -51,12 +51,7 @@ public final class Refund extends AuditMetadata {
   public static Refund autoCancel(
       String refundNo, String reason, String currency, BigDecimal amount) {
     return create(
-        refundNo,
-        RefundType.AUTO_CANCEL,
-        RefundStatus.PROCESSING,
-        reason,
-        currency,
-        amount);
+        refundNo, RefundType.AUTO_CANCEL, RefundStatus.PROCESSING, reason, currency, amount);
   }
 
   public static Refund reviewed(String reason, String currency, BigDecimal amount) {

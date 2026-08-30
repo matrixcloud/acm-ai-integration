@@ -23,9 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * REST controller for evaluation test-suite management and batch evaluation runs.
- */
+/** REST controller for evaluation test-suite management and batch evaluation runs. */
 @RestController
 @RequestMapping("/eval")
 @RequiredArgsConstructor
@@ -38,8 +36,7 @@ public class EvalController {
   public ResponseEntity<EvalSuiteResponse> createSuite(
       @Valid @RequestBody CreateEvalSuiteRequest request) {
     EvaluationSuite suite = evaluationUseCase.createSuite(request.getName());
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(responseMapper.toSuiteResponse(suite, 0));
+    return ResponseEntity.status(HttpStatus.CREATED).body(responseMapper.toSuiteResponse(suite, 0));
   }
 
   @GetMapping("/suites")
@@ -59,8 +56,7 @@ public class EvalController {
   }
 
   @PostMapping("/runs")
-  public ResponseEntity<EvalRunResponse> startRun(
-      @Valid @RequestBody StartEvalRunRequest request) {
+  public ResponseEntity<EvalRunResponse> startRun(@Valid @RequestBody StartEvalRunRequest request) {
     EvaluationRun run =
         evaluationUseCase.startRun(request.getKbNo(), request.getSuiteNo(), request.getTopK());
     RunReport report = evaluationUseCase.getRun(run.getRunNo());

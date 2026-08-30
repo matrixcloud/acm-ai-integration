@@ -3,20 +3,19 @@ package org.acm.os.application.service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Supplier;
-
 import lombok.RequiredArgsConstructor;
 import org.acm.os.application.exception.IdempotencyKeyReuseException;
+import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.application.exception.ReservedByConcurrentWriterException;
 import org.acm.os.application.exception.RetryableOperationException;
-import org.acm.os.application.exception.PersistedRetryableFailureException;
-import org.acm.os.domain.shared.InvalidRequestException;
 import org.acm.os.application.idempotency.IdempotencyRecord;
 import org.acm.os.application.idempotency.IdempotencyRecordRepository;
+import org.acm.os.domain.shared.InvalidRequestException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +25,8 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * Idempotency guard for command use cases (design §8.1, §9, §12.3).
  *
- * <p>Owns the full check → reserve → execute → complete protocol. Executes {@code action} inside
- * a single database transaction together with the guard record: a failed or crashed attempt rolls
+ * <p>Owns the full check → reserve → execute → complete protocol. Executes {@code action} inside a
+ * single database transaction together with the guard record: a failed or crashed attempt rolls
  * back completely, leaving the key free for retry.
  *
  * <p>Replay semantics:
@@ -41,7 +40,10 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 @RequiredArgsConstructor
 public class IdempotencyService {
-  /** Matches the {@code idempotency_records.idempotency_key} column width; longer keys would otherwise fail at insert with a raw 500. */
+  /**
+   * Matches the {@code idempotency_records.idempotency_key} column width; longer keys would
+   * otherwise fail at insert with a raw 500.
+   */
   private static final int MAX_KEY_LENGTH = 128;
 
   private final IdempotencyRecordRepository repository;
@@ -50,15 +52,12 @@ public class IdempotencyService {
   /**
    * Description of one idempotent command invocation.
    *
-   * @param responseType the result type; the cached payload is serialized/deserialized as this
-   *     type on replay. Decoupled from transport DTOs — callers cache domain or application
-   *     result types, never HTTP responses.
+   * @param responseType the result type; the cached payload is serialized/deserialized as this type
+   *     on replay. Decoupled from transport DTOs — callers cache domain or application result
+   *     types, never HTTP responses.
    */
   record IdempotentOperation<R>(
-      String operation,
-      String idempotencyKey,
-      Object request,
-      Class<R> responseType) {}
+      String operation, String idempotencyKey, Object request, Class<R> responseType) {}
 
   @Transactional
   public <R> R execute(IdempotentOperation<R> operation, Supplier<R> action) {

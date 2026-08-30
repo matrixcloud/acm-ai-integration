@@ -8,11 +8,9 @@ public interface RefundUseCase {
 
   Refund requestRefund(String orderNo, String reason, String idempotencyKey);
 
-  Refund approveRefund(
-      String refundNo, String reviewer, String comment, String idempotencyKey);
+  Refund approveRefund(String refundNo, String reviewer, String comment, String idempotencyKey);
 
-  Refund rejectRefund(
-      String refundNo, String reviewer, String comment, String idempotencyKey);
+  Refund rejectRefund(String refundNo, String reviewer, String comment, String idempotencyKey);
 
   Refund retryRefund(String refundNo, String idempotencyKey);
 }

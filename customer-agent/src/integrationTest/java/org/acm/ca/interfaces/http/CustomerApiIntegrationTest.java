@@ -21,9 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
@@ -37,17 +37,14 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * End-to-end tests for the merged customer service API: full Spring context + PostgreSQL via
- * Testcontainers, exercising the streaming message endpoint (SSE), sync endpoints, Problem
- * Details, API versioning and idempotency.
+ * Testcontainers, exercising the streaming message endpoint (SSE), sync endpoints, Problem Details,
+ * API versioning and idempotency.
  */
 @Testcontainers
 @AutoConfigureMockMvc
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-    properties = {
-      "eureka.client.enabled=false",
-      "spring.ai.openai.api-key=test-key"
-    })
+    properties = {"eureka.client.enabled=false", "spring.ai.openai.api-key=test-key"})
 class CustomerApiIntegrationTest {
 
   @Container @ServiceConnection
@@ -70,7 +67,8 @@ class CustomerApiIntegrationTest {
   // UC-01 创建会话
   @Test
   void createConversationReturnsActiveConversation() throws Exception {
-    String body = """
+    String body =
+        """
         {"customerId": "customer-001"}
         """;
 
@@ -114,7 +112,8 @@ class CustomerApiIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("API-Version", "1")
                 .header("Idempotency-Key", "msg-key-blank")
-                .content("""
+                .content(
+                    """
                     {"content": "   "}
                     """))
         .andExpect(status().isBadRequest())
@@ -133,7 +132,8 @@ class CustomerApiIntegrationTest {
             post("/conversations/{no}/messages", conversationNo)
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("API-Version", "1")
-                .content("""
+                .content(
+                    """
                     {"content": "Hello"}
                     """))
         .andExpect(status().isBadRequest())
@@ -237,7 +237,8 @@ class CustomerApiIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("API-Version", "1")
                 .header("Idempotency-Key", "fb-key-1")
-                .content("""
+                .content(
+                    """
                     {"rating": "SATISFIED", "comment": "回复很快"}
                     """))
         .andExpect(status().isOk())
@@ -289,7 +290,8 @@ class CustomerApiIntegrationTest {
     assertMessageCount(conversationNo, 2);
   }
 
-  // §17: OpenAPI must expose conversation, message, quick-question, end, feedback and agent operations.
+  // §17: OpenAPI must expose conversation, message, quick-question, end, feedback and agent
+  // operations.
   @Test
   void openApiDocumentsAllConversationOperations() throws Exception {
     String spec =
@@ -300,9 +302,14 @@ class CustomerApiIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    assertThat(spec).contains("/conversations", "/conversations/{conversationNo}/messages",
-        "/conversations/{conversationNo}/end", "/conversations/{conversationNo}/feedback",
-        "/quick-questions", "/agent/reply");
+    assertThat(spec)
+        .contains(
+            "/conversations",
+            "/conversations/{conversationNo}/messages",
+            "/conversations/{conversationNo}/end",
+            "/conversations/{conversationNo}/feedback",
+            "/quick-questions",
+            "/agent/reply");
   }
 
   private String createConversation(String customerId) throws Exception {
@@ -313,9 +320,11 @@ class CustomerApiIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("API-Version", "1")
                     .header("Idempotency-Key", "create-" + customerId + "-" + System.nanoTime())
-                    .content("""
+                    .content(
+                        """
                         {"customerId": "%s"}
-                        """.formatted(customerId)))
+                        """
+                            .formatted(customerId)))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -341,9 +350,11 @@ class CustomerApiIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("API-Version", "1")
                     .header("Idempotency-Key", key)
-                    .content("""
+                    .content(
+                        """
                         {"content": "%s"}
-                        """.formatted(content)))
+                        """
+                            .formatted(content)))
             .andExpect(request().asyncStarted())
             .andReturn();
     String raw =

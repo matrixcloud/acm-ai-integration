@@ -248,9 +248,7 @@ class ConversationServiceTest {
         .thenReturn(Optional.of(conversation));
 
     assertThatThrownBy(
-            () ->
-                service.streamMessage(
-                    command, "key-1", new RecordingConversationStream()))
+            () -> service.streamMessage(command, "key-1", new RecordingConversationStream()))
         .isInstanceOf(ConversationNotActiveException.class);
 
     verify(conversationRepository, never()).saveAndFlush(any());
@@ -273,9 +271,7 @@ class ConversationServiceTest {
         .streamReply(any(), any());
 
     assertThatThrownBy(
-            () ->
-                service.streamMessage(
-                    command, "key-1", new RecordingConversationStream()))
+            () -> service.streamMessage(command, "key-1", new RecordingConversationStream()))
         .isInstanceOf(AiAgentUnavailableException.class)
         .hasMessage("agent down");
 
@@ -309,9 +305,7 @@ class ConversationServiceTest {
     AiAgentUnavailableException exception =
         catchThrowableOfType(
             AiAgentUnavailableException.class,
-            () ->
-                service.streamMessage(
-                    command, "key-1", new RecordingConversationStream()));
+            () -> service.streamMessage(command, "key-1", new RecordingConversationStream()));
 
     // the SSE error event reports the agent's own code verbatim, not the transport-level code
     assertThat(exception.code()).isEqualTo("LLM_UNAVAILABLE");
@@ -334,9 +328,7 @@ class ConversationServiceTest {
     doAnswer(invocation -> null).when(agentUseCase).streamReply(any(), any());
 
     assertThatThrownBy(
-            () ->
-                service.streamMessage(
-                    command, "key-1", new RecordingConversationStream()))
+            () -> service.streamMessage(command, "key-1", new RecordingConversationStream()))
         .isInstanceOf(AiAgentUnavailableException.class)
         .hasMessage("Agent reply stream completed without content");
   }
@@ -472,10 +464,9 @@ class ConversationServiceTest {
     List<QuickQuestionItem> result = service.listQuickQuestions();
 
     assertThat(result)
-        .extracting(QuickQuestionItem::id, QuickQuestionItem::sortOrder, QuickQuestionItem::questionText)
-        .containsExactly(
-            tuple(1L, 1, "How to track my order?"),
-            tuple(2L, 2, "How to return?"));
+        .extracting(
+            QuickQuestionItem::id, QuickQuestionItem::sortOrder, QuickQuestionItem::questionText)
+        .containsExactly(tuple(1L, 1, "How to track my order?"), tuple(2L, 2, "How to return?"));
   }
 
   private static QuickQuestion quickQuestion(Long id, int sortOrder, String questionText) {

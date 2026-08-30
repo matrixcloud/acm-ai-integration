@@ -25,7 +25,9 @@ import org.acm.ca.domain.shared.AuditMetadata;
 @Table(
     name = "feedback",
     uniqueConstraints = {
-      @UniqueConstraint(name = "uk_feedback_conversation", columnNames = {"conversation_id"}),
+      @UniqueConstraint(
+          name = "uk_feedback_conversation",
+          columnNames = {"conversation_id"}),
     })
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -38,6 +40,7 @@ public final class Feedback extends AuditMetadata {
 
   @Enumerated(EnumType.STRING)
   private FeedbackRating rating;
+
   private String comment;
   private LocalDateTime submittedAt;
 

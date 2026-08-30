@@ -46,8 +46,7 @@ public class RefundAdminController {
 
   @PostMapping("/retry")
   public ResponseEntity<RefundResponse> retry(
-      @PathVariable String refundNo,
-      @RequestHeader("Idempotency-Key") String idempotencyKey) {
+      @PathVariable String refundNo, @RequestHeader("Idempotency-Key") String idempotencyKey) {
     return ResponseEntity.status(HttpStatus.ACCEPTED)
         .body(responseMapper.toRefundResponse(refundUseCase.retryRefund(refundNo, idempotencyKey)));
   }

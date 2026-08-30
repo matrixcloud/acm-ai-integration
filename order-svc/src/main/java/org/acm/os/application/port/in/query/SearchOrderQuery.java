@@ -10,8 +10,8 @@ import org.acm.os.domain.order.OrderStatus;
 /**
  * Application-layer input for the search-order query.
  *
- * <p>{@code status}, {@code sortBy} and {@code direction} are optional; unknown values are
- * rejected by the application service (sort whitelist) or the adapter (status parsing).
+ * <p>{@code status}, {@code sortBy} and {@code direction} are optional; unknown values are rejected
+ * by the application service (sort whitelist) or the adapter (status parsing).
  */
 @Data
 public class SearchOrderQuery {

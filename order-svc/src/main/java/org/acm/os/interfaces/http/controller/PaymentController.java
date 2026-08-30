@@ -21,9 +21,10 @@ public class PaymentController {
 
   @PostMapping
   public ResponseEntity<PaymentResponse> create(
-      @PathVariable String orderNo,
-      @RequestHeader("Idempotency-Key") String idempotencyKey) {
+      @PathVariable String orderNo, @RequestHeader("Idempotency-Key") String idempotencyKey) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(responseMapper.toPaymentResponse(paymentUseCase.createPayment(orderNo, idempotencyKey)));
+        .body(
+            responseMapper.toPaymentResponse(
+                paymentUseCase.createPayment(orderNo, idempotencyKey)));
   }
 }

@@ -51,7 +51,8 @@ class OrderQueryCircuitBreakerTest {
       server.expect(once(), requestTo(REQUEST_URL)).andRespond(withServerError());
     }
     for (int i = 0; i < 5; i++) {
-      server.expect(once(), requestTo(REQUEST_URL))
+      server
+          .expect(once(), requestTo(REQUEST_URL))
           .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
     }
 
@@ -77,12 +78,15 @@ class OrderQueryCircuitBreakerTest {
     OrderQueryClient client = new OrderQueryClientImpl(client(builder, tunedCircuitBreaker()));
     server.expect(once(), requestTo(REQUEST_URL)).andRespond(withServerError());
     server.expect(once(), requestTo(REQUEST_URL)).andRespond(withServerError());
-    server.expect(once(), requestTo(REQUEST_URL))
+    server
+        .expect(once(), requestTo(REQUEST_URL))
         .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
     // Half-Open 探测与恢复后的常规调用
-    server.expect(once(), requestTo(REQUEST_URL))
+    server
+        .expect(once(), requestTo(REQUEST_URL))
         .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
-    server.expect(once(), requestTo(REQUEST_URL))
+    server
+        .expect(once(), requestTo(REQUEST_URL))
         .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
 
     // 3 次调用中 2 次失败（66% ≥ 50%）→ OPEN
@@ -113,7 +117,8 @@ class OrderQueryCircuitBreakerTest {
       server.expect(once(), requestTo(REQUEST_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST));
     }
     for (int i = 0; i < 6; i++) {
-      server.expect(once(), requestTo(REQUEST_URL))
+      server
+          .expect(once(), requestTo(REQUEST_URL))
           .andRespond(withSuccess("{\"items\":[]}", MediaType.APPLICATION_JSON));
     }
 
@@ -135,7 +140,10 @@ class OrderQueryCircuitBreakerTest {
     properties.setDisableTimeLimiter(true);
     Resilience4JCircuitBreakerFactory factory =
         new Resilience4JCircuitBreakerFactory(
-            CircuitBreakerRegistry.ofDefaults(), TimeLimiterRegistry.ofDefaults(), null, properties);
+            CircuitBreakerRegistry.ofDefaults(),
+            TimeLimiterRegistry.ofDefaults(),
+            null,
+            properties);
     HttpServiceResilienceConfiguration.configureHttpServiceGroups(factory);
     return factory.create(OrderServiceHttpClientConfiguration.ORDER_SERVICE_GROUP);
   }
@@ -145,7 +153,10 @@ class OrderQueryCircuitBreakerTest {
     properties.setDisableTimeLimiter(true);
     Resilience4JCircuitBreakerFactory factory =
         new Resilience4JCircuitBreakerFactory(
-            CircuitBreakerRegistry.ofDefaults(), TimeLimiterRegistry.ofDefaults(), null, properties);
+            CircuitBreakerRegistry.ofDefaults(),
+            TimeLimiterRegistry.ofDefaults(),
+            null,
+            properties);
     // 与生产同构的最小阈值组合：让状态迁移在毫秒级完成
     factory.configure(
         builder ->

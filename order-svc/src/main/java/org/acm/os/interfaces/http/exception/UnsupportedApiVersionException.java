@@ -1,8 +1,6 @@
 package org.acm.os.interfaces.http.exception;
 
-/**
- * Thrown when a request carries an unsupported or missing {@code API-Version} header.
- */
+/** Thrown when a request carries an unsupported or missing {@code API-Version} header. */
 public class UnsupportedApiVersionException extends RuntimeException {
 
   /**

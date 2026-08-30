@@ -53,8 +53,7 @@ public class MockConfigurationService implements MockConfigurationUseCase {
         () -> mockControlPort.failNext(capability));
   }
 
-  private void execute(
-      String operation, String idempotencyKey, Object request, Runnable action) {
+  private void execute(String operation, String idempotencyKey, Object request, Runnable action) {
     idempotencyService.execute(
         new IdempotencyService.IdempotentOperation<>(
             operation, idempotencyKey, request, Boolean.class),

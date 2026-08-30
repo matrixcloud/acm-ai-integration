@@ -7,9 +7,9 @@ import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import org.acm.os.application.idempotency.IdempotencyRecordRepository;
-import org.acm.os.application.exception.RetryableOperationException;
 import org.acm.os.application.exception.PersistedRetryableFailureException;
+import org.acm.os.application.exception.RetryableOperationException;
+import org.acm.os.application.idempotency.IdempotencyRecordRepository;
 import org.acm.os.domain.order.Order;
 import org.acm.os.domain.order.OrderItem;
 import org.acm.os.domain.order.OrderRepository;
@@ -171,7 +171,8 @@ class PostgresPersistenceIntegrationTest {
                 idempotencyService.executeRetryable(
                     operation,
                     () -> {
-                      Order current = orderRepository.findByOrderNo(saved.getOrderNo()).orElseThrow();
+                      Order current =
+                          orderRepository.findByOrderNo(saved.getOrderNo()).orElseThrow();
                       current.cancelPending();
                       orderRepository.saveAndFlush(current);
                       throw new PersistedRetryableFailureException(
