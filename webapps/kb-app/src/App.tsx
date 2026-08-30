@@ -1,4 +1,4 @@
-import { Activity, BookOpen } from "lucide-react"
+import { Activity, BookOpen, Plus } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
 import { DocumentList } from "@/components/kb/document-list"
@@ -26,6 +26,8 @@ function App() {
   const [isRunningEval, setIsRunningEval] = useState(false)
   const [isLoadingKbs, setIsLoadingKbs] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreatingKb, setIsCreatingKb] = useState(false)
+  const [newKbName, setNewKbName] = useState("")
 
   const selectedKb = knowledgeBases.find((kb) => kb.id === selectedKbId) ?? null
 
@@ -102,6 +104,30 @@ function App() {
     },
     [knowledgeBases],
   )
+
+  const handleCreateKb = useCallback(async () => {
+    const name = newKbName.trim()
+    if (!name) {
+      return
+    }
+
+    setIsCreatingKb(true)
+    setError(null)
+    try {
+      const kb = await kbService.createKnowledgeBase(name)
+      setNewKbName("")
+      const kbs = await refreshKnowledgeBases()
+      setKnowledgeBases(kbs)
+      setSelectedKbId(kb.id)
+      setDocuments([])
+    } catch (cause) {
+      setError(
+        cause instanceof KbServiceError ? cause.message : "创建知识库失败，请稍后重试",
+      )
+    } finally {
+      setIsCreatingKb(false)
+    }
+  }, [newKbName, refreshKnowledgeBases])
 
   const handleUpload = useCallback(
     async (file: File) => {
@@ -220,6 +246,33 @@ function App() {
                 <span className="text-xs text-muted-foreground">加载中…</span>
               )}
             </div>
+            <form
+              className="flex gap-2"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void handleCreateKb()
+              }}
+            >
+              <input
+                type="text"
+                value={newKbName}
+                onChange={(event) => setNewKbName(event.target.value)}
+                placeholder="新知识库名称"
+                maxLength={100}
+                aria-label="知识库名称"
+                className="h-9 min-w-0 flex-1 rounded-full border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-4 focus-visible:ring-ring/25"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                variant="secondary"
+                disabled={isCreatingKb || !newKbName.trim()}
+              >
+                <Plus className="size-4" />
+                创建
+              </Button>
+            </form>
+
             <KbList
               knowledgeBases={knowledgeBases}
               selectedKbId={selectedKbId}

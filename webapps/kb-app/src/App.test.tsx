@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -8,6 +8,7 @@ import type { KnowledgeBase } from "@/types/kb"
 
 vi.mock("@/services/kb-service", () => ({
   kbService: {
+    createKnowledgeBase: vi.fn(),
     listKnowledgeBases: vi.fn(),
     listDocuments: vi.fn(),
     uploadDocument: vi.fn(),
@@ -58,5 +59,28 @@ describe("App", () => {
       expect(within(list).getByText("订单流程知识库")).toBeInTheDocument()
     })
     expect(mockedService.listKnowledgeBases).toHaveBeenCalled()
+  })
+
+  it("creates a knowledge base from the input", async () => {
+    mockedService.listKnowledgeBases.mockResolvedValue([])
+    mockedService.listDocuments.mockResolvedValue([])
+    mockedService.createKnowledgeBase.mockResolvedValue(
+      knowledgeBase("KB-3", "新品知识库"),
+    )
+
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+
+    fireEvent.change(await screen.findByLabelText("知识库名称"), {
+      target: { value: "  新品知识库  " },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "创建" }))
+
+    await waitFor(() => {
+      expect(mockedService.createKnowledgeBase).toHaveBeenCalledWith("新品知识库")
+    })
   })
 })

@@ -145,6 +145,33 @@ describe("kb-service client", () => {
     expect(fetchMock).toHaveBeenCalledWith("/kbs", undefined)
   })
 
+  it("creates a knowledge base over HTTP and maps the response", async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(201, {
+        kbNo: "KB-9",
+        name: "新品知识库",
+        status: "ACTIVE",
+        docCount: 0,
+        createdAt: "2026-08-30T00:00:00",
+      }),
+    )
+
+    await expect(kbService.createKnowledgeBase("新品知识库")).resolves.toEqual({
+      id: "KB-9",
+      name: "新品知识库",
+      status: "active",
+      docCount: 0,
+      createdAt: "2026-08-30T00:00:00",
+    })
+
+    const [url, init] = fetchMock.mock.calls[0]!
+    expect(url).toBe("/kbs")
+    expect((init as RequestInit).method).toBe("POST")
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({
+      name: "新品知识库",
+    })
+  })
+
   it("posts a JSON search and maps chunks", async () => {
     const fetchMock = stubFetch(
       jsonResponse(200, {

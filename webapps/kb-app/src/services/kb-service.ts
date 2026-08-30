@@ -85,6 +85,7 @@ export class KbServiceError extends Error {
 }
 
 export type KbService = {
+  createKnowledgeBase(name: string): Promise<KnowledgeBase>
   listKnowledgeBases(): Promise<KnowledgeBase[]>
   listDocuments(kbNo: string): Promise<KbDocument[]>
   uploadDocument(kbNo: string, file: File): Promise<KbDocument>
@@ -200,6 +201,15 @@ function toEvalRunStatus(status: BackendEvalRunStatus): EvalRunReport["status"] 
 }
 
 export const kbService: KbService = {
+  async createKnowledgeBase(name) {
+    const kb = await request<BackendKnowledgeBase>("/kbs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+    return toKnowledgeBase(kb)
+  },
+
   async listKnowledgeBases() {
     const kbs = await request<BackendKnowledgeBase[]>("/kbs")
     return kbs.map(toKnowledgeBase)
