@@ -4,6 +4,7 @@ import type {
   FeedbackRating,
 } from "@/types/chat"
 import { parseSseStream } from "@/services/sse"
+import { newUuid } from "@/services/uuid"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ""
 const API_VERSION = "1"
@@ -68,15 +69,11 @@ export class CustomerServiceError extends Error {
   }
 }
 
-function idempotencyKey(): string {
-  return crypto.randomUUID()
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   headers.set("API-Version", API_VERSION)
   if (init?.method && init.method !== "GET") {
-    headers.set("Idempotency-Key", idempotencyKey())
+    headers.set("Idempotency-Key", newUuid())
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -132,7 +129,7 @@ export async function streamAssistantReply(
       headers: {
         "Content-Type": "application/json",
         "API-Version": API_VERSION,
-        "Idempotency-Key": idempotencyKey(),
+        "Idempotency-Key": newUuid(),
         Accept: "text/event-stream",
       },
       body: JSON.stringify({ content }),

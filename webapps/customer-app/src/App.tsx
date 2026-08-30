@@ -9,6 +9,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ChatComposer, type ComposerMode } from "@/components/chat/chat-composer"
+import { newUuid } from "@/services/uuid"
 import { ChatMessage } from "@/components/chat/chat-message"
 import { FeedbackCard } from "@/components/chat/feedback-card"
 import { SupportAvatar } from "@/components/chat/support-avatar"
@@ -56,7 +57,7 @@ const COMPOSER_MODE_BY_STATUS: Record<ConversationStatus, ComposerMode> = {
 
 function createMessage(role: ChatMessageType["role"], content: string): ChatMessageType {
   return {
-    id: crypto.randomUUID(),
+    id: newUuid(),
     role,
     content,
     createdAt: new Date(),
