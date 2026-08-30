@@ -143,11 +143,17 @@ async function seedKb() {
 // ─── order seed ────────────────────────────────────────────────────────────────
 function psqlStrings(sql) {
   try {
-    const out = execFileSync(
-      'docker',
-      ['compose', 'exec', '-T', 'postgres', 'psql', '-U', 'acm', '-d', 'order', '-tA', '-c', sql],
-      { cwd: REPO_ROOT, encoding: 'utf8' },
-    );
+    const out = process.env.SEED_PG_HOST
+      ? execFileSync(
+          'psql',
+          ['-h', process.env.SEED_PG_HOST, '-U', 'acm', '-d', 'order', '-tA', '-c', sql],
+          { encoding: 'utf8' },
+        )
+      : execFileSync(
+          'docker',
+          ['compose', 'exec', '-T', 'postgres', 'psql', '-U', 'acm', '-d', 'order', '-tA', '-c', sql],
+          { cwd: REPO_ROOT, encoding: 'utf8' },
+        );
     return out
       .split('\n')
       .map((s) => s.trim())
@@ -265,9 +271,28 @@ async function seedOrder() {
   return counts;
 }
 
+async function waitForHealth(base, label, timeoutMs = Number(process.env.WAIT_TIMEOUT_MS) || 240000) {
+  const url = `${base}/actuator/health`;
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    if (Date.now() >= deadline) {
+      throw new Error(`${label} 未在 ${timeoutMs / 1000}s 内就绪: ${url}`);
+    }
+    try {
+      if ((await fetch(url)).ok) {
+        console.log(`  ${label} ready`);
+        return;
+      }
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+}
+
 // ─── main ──────────────────────────────────────────────────────────────────────
 const summary = {};
 async function main() {
+  if (ONLY !== 'order') await waitForHealth(KB_BASE, 'kb-svc');
+  if (ONLY !== 'kb') await waitForHealth(ORDER_BASE, 'order-svc');
   if (ONLY !== 'order') {
     console.log('== seed kb-svc ==');
     summary.kb = await seedKb();

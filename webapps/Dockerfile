@@ -12,3 +12,4 @@ RUN pnpm --filter ./${APP} build
 FROM docker.m.daocloud.io/library/nginx:alpine
 ARG APP
 COPY --from=build /app/${APP}/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf

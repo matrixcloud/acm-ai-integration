@@ -1,0 +1,3 @@
+CREATE DATABASE "cs-agent";
+CREATE DATABASE "order";
+CREATE DATABASE kb;

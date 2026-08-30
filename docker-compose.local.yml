@@ -1,0 +1,126 @@
+name: acm-local
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_DB: acm
+      POSTGRES_USER: acm
+      POSTGRES_PASSWORD: Qwerty123!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./scripts/seed/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acm -d acm"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  redis:
+    image: redis:8.2
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  registry-svc:
+    image: acm/registry-svc:latest
+    ports:
+      - "8761:8761"
+
+  order-svc:
+    image: acm/order-svc:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order
+      EUREKA_SERVER_URL: http://registry-svc:8761
+    ports:
+      - "8020:8020"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      registry-svc:
+        condition: service_started
+
+  kb-svc:
+    image: acm/kb-svc:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kb
+      EUREKA_SERVER_URL: http://registry-svc:8761
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      registry-svc:
+        condition: service_started
+
+  customer-agent:
+    image: acm/customer-agent:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cs-agent
+      EUREKA_SERVER_URL: http://registry-svc:8761
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    ports:
+      - "8010:8010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      registry-svc:
+        condition: service_started
+
+  gateway-svc:
+    image: acm/gateway-svc:latest
+    environment:
+      EUREKA_SERVER_URL: http://registry-svc:8761
+    ports:
+      - "8080:8080"
+    depends_on:
+      registry-svc:
+        condition: service_started
+
+  customer-app:
+    image: acm/customer-app:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      gateway-svc:
+        condition: service_started
+
+  kb-app:
+    image: acm/kb-app:latest
+    ports:
+      - "3001:80"
+    depends_on:
+      gateway-svc:
+        condition: service_started
+
+  seed:
+    build:
+      context: ./scripts/seed
+      dockerfile: Dockerfile
+    image: acm/seed:latest
+    working_dir: /seed
+    command: node seed.mjs
+    volumes:
+      - ./scripts/seed:/seed
+    environment:
+      PGPASSWORD: Qwerty123!
+      SEED_PG_HOST: postgres
+      KB_BASE_URL: http://kb-svc:8001
+      ORDER_BASE_URL: http://order-svc:8020
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    depends_on:
+      order-svc:
+        condition: service_started
+      kb-svc:
+        condition: service_started
+
+volumes:
+  postgres_data:
