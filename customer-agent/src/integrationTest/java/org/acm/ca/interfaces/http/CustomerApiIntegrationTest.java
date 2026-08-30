@@ -11,12 +11,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.application.port.in.GenerateReplyCommand;
 import org.acm.ca.application.port.in.ReplyStream;
 import org.acm.ca.application.port.out.AiAgentUnavailableException;
 import org.acm.ca.application.port.out.OrderQueryClient;
+import org.acm.ca.application.port.out.OrderQueryClient.OrderDetail;
+import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -426,7 +429,22 @@ class CustomerApiIntegrationTest {
     @Bean
     @Primary
     OrderQueryClient testOrderQueryClient() {
-      return customerId -> List.of();
+      return new OrderQueryClient() {
+        @Override
+        public List<OrderSummary> getRecentOrders(String customerId) {
+          return List.of();
+        }
+
+        @Override
+        public List<OrderSummary> findByRecipientPhone(String recipientPhone) {
+          return List.of();
+        }
+
+        @Override
+        public Optional<OrderDetail> findByOrderNo(String orderNo) {
+          return Optional.empty();
+        }
+      };
     }
   }
 

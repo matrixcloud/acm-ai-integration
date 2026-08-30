@@ -3,6 +3,9 @@ glob_matcher: doublestar
 pre-commit:
   parallel: true
   commands:
+    backend-check:
+      run: ./gradlew spotlessCheck compileJava compileTestJava compileIntegrationTestJava -q
+      glob: "{**/*.java,**/*.gradle,**/*.gradle.kts,gradle.properties,settings.gradle,settings.gradle.kts,gradle/**}"
     customer-app-lint:
       root: "webapps/customer-app"
       run: pnpm run lint
