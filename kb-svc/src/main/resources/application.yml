@@ -44,3 +44,6 @@ management:
     sampling:
       probability: 1.0
 
+logging:
+  file:
+    path: ${LOG_PATH:./logs}

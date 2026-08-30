@@ -38,3 +38,6 @@ order:
     inventory: mock
     payment: mock
     logistics: mock
+logging:
+  file:
+    path: ${LOG_PATH:./logs}

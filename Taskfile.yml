@@ -88,9 +88,10 @@ tasks:
     cmds:
       - ./gradlew bootBuildImage --parallel
       - |
-        for dir in webapps/*/; do
+        for manifest in webapps/*/package.json; do
+          dir="${manifest%/package.json}"
           name=$(basename "$dir")
-          ver=$(node -p "require('./$dir/package.json').version")
+          ver=$(node -p "require('./$manifest').version")
           docker build \
             -f webapps/Dockerfile \
             --build-arg "APP=$name" \

@@ -107,6 +107,16 @@ task web APP=customer-app   # 或单独启动某个前端
 
 开发服务器通过 Vite 代理将 `/api` 转发到网关 `http://localhost:8080`。
 
+### 全栈容器启动
+
+构建全部应用镜像后，可启动完整的本地容器环境：
+
+```bash
+DASHSCOPE_URL= \
+DASHSCOPE_API_KEY=sk-xxxx \
+docker compose -f docker-compose.local.yml up -d
+```
+
 ## 服务端口
 
 | 服务 | 端口 | 说明 |

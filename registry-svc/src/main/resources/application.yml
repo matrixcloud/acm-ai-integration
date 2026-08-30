@@ -17,3 +17,6 @@ management:
     web:
       exposure:
         include: health
+logging:
+  file:
+    path: ${LOG_PATH:./logs}
