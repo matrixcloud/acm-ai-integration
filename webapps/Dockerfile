@@ -10,6 +10,10 @@ COPY . .
 RUN pnpm --filter ./${APP} build
 
 FROM docker.m.daocloud.io/library/nginx:alpine
+ENV TZ=Asia/Shanghai
+RUN apk add --no-cache tzdata \
+    && ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo Asia/Shanghai > /etc/timezone
 ARG APP
 COPY --from=build /app/${APP}/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

@@ -4,6 +4,7 @@
 // 用法:
 //   node scripts/seed/seed.mjs                 # 全量：kb + order
 //   node scripts/seed/seed.mjs --kb-only       # 仅知识库
+//   node scripts/seed/seed.mjs --kb-refresh    # 重传已存在的知识库文档
 //   node scripts/seed/seed.mjs --order-only    # 仅订单
 //   node scripts/seed/seed.mjs --smoke         # 每种订单状态只造 1 单（快速验证）
 //
@@ -27,6 +28,7 @@ const ORDER_BASE = process.env.ORDER_BASE_URL ?? 'http://localhost:8020';
 
 const args = process.argv.slice(2);
 const ONLY = args.includes('--kb-only') ? 'kb' : args.includes('--order-only') ? 'order' : 'both';
+const KB_REFRESH = args.includes('--kb-refresh');
 const SMOKE = args.includes('--smoke');
 
 // ─── KB manifest ────────────────────────────────────────────────────────────────
@@ -105,13 +107,14 @@ async function uploadDocument(kbNo, filename) {
 async function ensureDoc(kbNo, filename) {
   const docs = await http('GET', `/kbs/${kbNo}/documents`, { base: KB_BASE });
   const existing = docs.find((d) => d.name === filename);
-  if (existing && existing.status === 'READY') {
+  if (existing && existing.status === 'READY' && !KB_REFRESH) {
     console.log(`  (skip) ${existing.documentNo} 已就绪`);
     return 0;
   }
   if (existing) {
     await http('DELETE', `/kbs/${kbNo}/documents/${existing.documentNo}`, { base: KB_BASE });
-    console.log(`  (retry) 删除残留 ${existing.documentNo}（status=${existing.status}）后重传`);
+    const action = KB_REFRESH ? 'refresh' : 'retry';
+    console.log(`  (${action}) 删除 ${existing.documentNo}（status=${existing.status}）后重传`);
   }
   await uploadDocument(kbNo, filename);
   console.log(`  uploaded ${filename} -> ${kbNo}`);

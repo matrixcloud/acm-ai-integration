@@ -8,7 +8,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,12 @@ class KbServiceTest {
   @InjectMocks private KbService service;
 
   @Test
+  void runtimeDefaultsUseUtf8AndAsiaShanghai() {
+    assertThat(Charset.defaultCharset()).isEqualTo(StandardCharsets.UTF_8);
+    assertThat(ZoneId.systemDefault()).isEqualTo(ZoneId.of("Asia/Shanghai"));
+  }
+
+  @Test
   void uploadDocumentBatchesEmbeddingIntoChunksOfAtMostTen() throws Exception {
     KnowledgeBase kb = KnowledgeBase.create("知识库");
     when(knowledgeBaseRepository.findByKbNo("KB-1")).thenReturn(Optional.of(kb));
@@ -67,5 +75,29 @@ class KbServiceTest {
     assertThat(captor.getAllValues().get(0)).hasSize(10);
     assertThat(captor.getAllValues().get(1)).hasSize(10);
     assertThat(captor.getAllValues().get(2)).hasSize(5);
+  }
+
+  @Test
+  void uploadMarkdownPreservesUtf8Content() throws Exception {
+    KnowledgeBase kb = KnowledgeBase.create("售后退换货");
+    when(knowledgeBaseRepository.findByKbNo("KB-1")).thenReturn(Optional.of(kb));
+    when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    MultipartFile file = mock(MultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getBytes()).thenReturn("# 退款\n退款通常 1-7 个工作日到账。".getBytes(StandardCharsets.UTF_8));
+    when(file.getOriginalFilename()).thenReturn("售后退换货.md");
+    when(textSplitter.apply(anyList()))
+        .thenAnswer(invocation -> new ArrayList<>(invocation.getArgument(0)));
+
+    service.uploadDocument("KB-1", file);
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<org.springframework.ai.document.Document>> captor =
+        ArgumentCaptor.forClass(List.class);
+    verify(vectorStore).add(captor.capture());
+    assertThat(captor.getValue())
+        .extracting(org.springframework.ai.document.Document::getText)
+        .containsExactly("退款通常 1-7 个工作日到账。");
   }
 }

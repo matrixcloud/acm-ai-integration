@@ -3,6 +3,10 @@ plugins {
     id 'com.diffplug.spotless' version '8.10.1'
     id 'com.github.spotbugs' version '6.5.11' apply false
 }
+
+def serviceFileEncoding = 'UTF-8'
+def serviceTimeZone = 'Asia/Shanghai'
+
 allprojects {
     group = 'org.acm'
     version = '0.0.1-SNAPSHOT'
@@ -22,7 +26,12 @@ subprojects {
         tasks.named('bootBuildImage') {
             imageName = "acm/${project.name}:${project.version}"
             tags = ["acm/${project.name}:latest"]
-            environment = ["BP_JVM_VERSION": "17"]
+            environment = [
+                "BP_JVM_VERSION": "17",
+                "BPE_APPEND_JAVA_TOOL_OPTIONS": "-Dfile.encoding=${serviceFileEncoding} -Duser.timezone=${serviceTimeZone}",
+                "BPE_DEFAULT_TZ": serviceTimeZone,
+                "BPE_DELIM_JAVA_TOOL_OPTIONS": " "
+            ]
             builder = "docker.m.daocloud.io/paketobuildpacks/builder-noble-java-tiny:latest"
             // run image 版本须与 builder 元数据中的 stack runImage 一致
             runImage = "docker.m.daocloud.io/paketobuildpacks/ubuntu-noble-run-tiny:0.0.122"
@@ -58,6 +67,8 @@ subprojects {
             .configureEach { enabled = false }
         tasks.named('test') {
             useJUnitPlatform()
+            systemProperty 'file.encoding', serviceFileEncoding
+            systemProperty 'user.timezone', serviceTimeZone
         }
     }
 }
