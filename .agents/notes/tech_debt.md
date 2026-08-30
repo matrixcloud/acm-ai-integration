@@ -96,3 +96,13 @@
 - 起因：LLM prompt 模板用 `\n` 作为数据内容
 - 消除方式：WAIVER——保留精确豁免（仅 `EvaluationService` 的 FS）
 - 来源：质量关卡横向复制 review（2026-08-30）
+
+## 2026-08-30 customer-app 客服回复按 markdown 渲染，软换行（单个 \n）折叠为空格
+
+- 位置：`webapps/customer-app/src/components/chat/chat-message.tsx`（support 消息经 `ReactMarkdown` + `remark-gfm` 渲染）
+- 现状：AGENT 回复不再用 `whitespace-pre-wrap` 原样输出，改为 CommonMark/GFM 语义——段落换行需 `\n\n`，单个 `\n` 软换行折叠为空格；流式中的「正在输入」气泡显式 `renderMarkdown={false}` 保持纯文本，落定后整体替换为 markdown 渲染（消除流式逐 token 重解析的 O(n²) 与半成品语法闪烁）
+- 影响：若后端 LLM 输出`单 \n 换行`的纯文本（非 `\n\n` 段落、非列表/代码块），已落库或新回复的可见换行会丢失；customer 消息始终走纯文本分支，不受影响
+- 起因：后端 `customer-agent` 的 system prompt（application.yml）未强制 markdown 换行约定，依赖 qwen 自然输出 markdown（bug 报告即证明 markdown 已产出但前端未渲染）
+- 消除方式：若后端确认存在单 `\n` 纯文本回复，则加 `remark-breaks` 或于 `toChatMessage` 边界把 `\n` 归一为 `\n\n`；否则维持现状并作为前端↔LLM 的 markdown 契约
+- 来源：review-acm-code WAIVER（Design Fit：软换行语义）
+

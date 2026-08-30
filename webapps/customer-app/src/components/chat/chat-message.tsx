@@ -1,4 +1,6 @@
 import { Bot } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 import { SupportAvatar } from "@/components/chat/support-avatar"
 import { cn } from "@/lib/utils"
@@ -10,12 +12,16 @@ const TIME_FORMATTER = new Intl.DateTimeFormat("zh-CN", {
   hour12: false,
 })
 
+const REMARK_PLUGINS = [remarkGfm]
+
 type ChatMessageProps = {
   message: ChatMessageType
+  renderMarkdown?: boolean
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, renderMarkdown = true }: ChatMessageProps) {
   const isCustomer = message.role === "customer"
+  const shouldRenderMarkdown = !isCustomer && renderMarkdown
 
   return (
     <article
@@ -32,13 +38,20 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
         <div
           className={cn(
-            "break-words whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-6 shadow-[0_1px_2px_rgba(21,39,64,0.06)]",
+            "break-words rounded-2xl px-4 py-3 text-[15px] leading-6 shadow-[0_1px_2px_rgba(21,39,64,0.06)]",
             isCustomer
-              ? "rounded-br-md bg-primary text-primary-foreground"
+              ? "whitespace-pre-wrap rounded-br-md bg-primary text-primary-foreground"
               : "rounded-bl-md border border-border/75 bg-white text-foreground",
+            !shouldRenderMarkdown && "whitespace-pre-wrap",
           )}
         >
-          {message.content}
+          {shouldRenderMarkdown ? (
+            <div className="markdown-body">
+              <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{message.content}</ReactMarkdown>
+            </div>
+          ) : (
+            message.content
+          )}
         </div>
         <time className="mt-1.5 px-1 text-[11px] text-muted-foreground/80">
           {TIME_FORMATTER.format(message.createdAt)}

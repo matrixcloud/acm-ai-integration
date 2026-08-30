@@ -312,6 +312,7 @@ function App() {
                       content: streamingReply,
                       createdAt: new Date(),
                     }}
+                    renderMarkdown={false}
                   />
                 )}
               </div>
