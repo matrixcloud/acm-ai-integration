@@ -20,9 +20,7 @@ class KbSearchToolTest {
   @BeforeEach
   void setUp() {
     kbSearchClient = mock(KbSearchClient.class);
-    ReplyRulesConfig config =
-        new ReplyRulesConfig(
-            "default", "KB-1", 5, new ReplyRulesConfig.KbService("http://localhost"), List.of());
+    ReplyRulesConfig config = new ReplyRulesConfig("default", "KB-1", 5, List.of());
     tool = new KbSearchTool(kbSearchClient, config);
   }
 

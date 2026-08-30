@@ -34,3 +34,12 @@
 - 影响：演示级可接受（Hikari 连接数 10 > 4，不会先耗尽 DB 连接；60s emitter 超时兜底）；多用户并发演示时观感为「卡住」
 - 消除方式：流式场景改 core=max（或 SynchronousQueue 直接扩容），并将拒绝策略映射为 503 ProblemDetail；或按端点拆分独立池并限流
 - 来源：review-acm-code F3（WAIVER）
+
+## 2026-08-30 下游调用超时预算 8s 不是硬上界，真实上界约 14.2s
+
+- 位置：`customer-agent` `OrderQueryClientImpl` / `KbSearchClientImpl` 的 `@Retryable(timeout = 8000)`，配合既有 HTTP connect 2s / read 5s
+- 现状：Spring Framework 7 retry 的 `timeout` 是「是否再发起下一次重试」的 deadline 检查，不中断进行中的调用；单次尝试最坏 7s，7.1s 时仍会发起第 2 次（再 7s），真实上界 ≈ 2×7s + backoff ≈ 14.2s
+- 影响：下游挂死时 SSE 端最长约 14s 才收到 error 事件，而非方案口径的 8s；对快速失败场景（如 503）预算成立（测试断言 <8s 仅覆盖该场景）
+- 起因：这是已确认方案给定参数（connect 2s / read 5s / maxRetries 1 / timeout 8s）的固有算术结果，非实现偏差；若要硬上界需砍单次超时或引入可中断的 TimeLimiter（后者会截断合法 5s 读并引入线程池跳转，已因前述代价显式关闭）
+- 消除方式：收紧单次超时（如 read 3s）使 8s 真实生效；或接受 14.2s 上界并在容量规划时按此口径
+- 来源：review-acm-code F3（WAIVER，待用户确认）

@@ -53,11 +53,7 @@ class AgentServiceTest {
 
   private static ReplyRulesConfig configWithRefundRule() {
     return new ReplyRulesConfig(
-        "default-prompt",
-        "KB-1",
-        5,
-        new ReplyRulesConfig.KbService("http://localhost:8001"),
-        List.of(new ReplyRule("REFUND", "退款,退货", "refund-prompt", 8)));
+        "default-prompt", "KB-1", 5, List.of(new ReplyRule("REFUND", "退款,退货", "refund-prompt", 8)));
   }
 
   private static GenerateReplyCommand command(String message) {

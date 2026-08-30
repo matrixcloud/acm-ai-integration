@@ -1,6 +1,10 @@
 spring:
   application:
     name: customer-agent
+  cloud:
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
   datasource:
     url: jdbc:postgresql://localhost:5432/cs-agent
     username: acm
@@ -56,8 +60,6 @@ customer:
       5. 不要编造不确定的信息
     kb-no: KB-2026-0001
     kb-top-k: 5
-    kb-service:
-      base-url: http://localhost:8001
     rules:
       - name: ORDER_STATUS
         keywords: "订单,物流,快递,发货,到哪了,运单"

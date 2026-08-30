@@ -8,9 +8,7 @@ import org.junit.jupiter.api.Test;
 class RuleRouterTest {
 
   private static RuleRouter routerOf(List<ReplyRule> rules) {
-    return new RuleRouter(
-        new ReplyRulesConfig(
-            "default", "KB-1", 5, new ReplyRulesConfig.KbService("http://localhost"), rules));
+    return new RuleRouter(new ReplyRulesConfig("default", "KB-1", 5, rules));
   }
 
   @Test

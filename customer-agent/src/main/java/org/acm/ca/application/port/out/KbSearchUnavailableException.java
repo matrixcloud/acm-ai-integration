@@ -7,4 +7,8 @@ public class KbSearchUnavailableException extends BusinessException {
   public KbSearchUnavailableException(String message) {
     super("EXTERNAL_DEPENDENCY_FAILED", message);
   }
+
+  public KbSearchUnavailableException(String message, Throwable cause) {
+    super("EXTERNAL_DEPENDENCY_FAILED", message, cause);
+  }
 }
