@@ -14,6 +14,17 @@
   </Match>
 
   <!--
+    后缀正则未覆盖的 DTO 补充：OrderDetail 是 port 层纯数据传输 record（与已豁免的
+    OrderSummary 同文件同性质），含 List 字段必然结构性触发 EI/EI2。
+    不变式：唯一生产路径 OrderQueryClientImpl.toDetail 产出不可变 List（.toList()/List.of()），
+    消费方（OrderQueryTool）只读遍历。若未来生产方改为可变收集，需在此重新评估。
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP, EI_EXPOSE_REP2"/>
+    <Class name="org.acm.ca.application.port.out.OrderQueryClient$OrderDetail"/>
+  </Match>
+
+  <!--
     非 DTO 特例：Builder 收集参数、Spring 框架对象（MeterRegistry/ObservationRegistry）注入，
     EI2 报「存储外部可变对象」实为误报。
   -->
