@@ -90,11 +90,11 @@ class ConversationResponseMapperTest {
 
   @Test
   void mapsQuickQuestionItem() {
-    QuickQuestionItem item = new QuickQuestionItem(1L, 5, "如何联系人工客服？");
+    QuickQuestionItem item = new QuickQuestionItem("q1", 5, "如何联系人工客服？");
 
     QuickQuestionResponse response = mapper.toQuickQuestionResponse(item);
 
-    assertThat(response.getId()).isEqualTo(1L);
+    assertThat(response.getId()).isEqualTo("q1");
     assertThat(response.getSortOrder()).isEqualTo(5);
     assertThat(response.getQuestionText()).isEqualTo("如何联系人工客服？");
     assertThat(mapper.toQuickQuestionResponseList(List.of(item))).containsExactly(response);

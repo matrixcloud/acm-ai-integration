@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class ConversationDetailResponse {
-  private Long id;
+  private String id;
   private String conversationNo;
   private String customerId;
   private String status;
@@ -18,7 +18,7 @@ public class ConversationDetailResponse {
 
   @Data
   public static class MessageResponse {
-    private Long id;
+    private String id;
     private Integer seqNo;
     private String role;
     private String content;

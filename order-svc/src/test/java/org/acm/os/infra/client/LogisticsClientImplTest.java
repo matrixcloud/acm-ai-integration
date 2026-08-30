@@ -17,7 +17,7 @@ class LogisticsClientImplTest {
 
   @Test
   void createAndConfirmAreIdempotentForSameRequest() {
-    List<ShipmentItem> items = List.of(new ShipmentItem(1L, 1));
+    List<ShipmentItem> items = List.of(new ShipmentItem("item-1", 1));
     LogisticsShipment first =
         client.createShipment("ORD-1", "SHP-1", "MOCK_EXPRESS", address, items, "key");
     LogisticsShipment replay =
@@ -29,7 +29,7 @@ class LogisticsClientImplTest {
 
   @Test
   void rejectsUnknownCarrierTrackingAndChangedReplay() {
-    List<ShipmentItem> items = List.of(new ShipmentItem(1L, 1));
+    List<ShipmentItem> items = List.of(new ShipmentItem("item-1", 1));
     assertThatThrownBy(
             () ->
                 client.createShipment(

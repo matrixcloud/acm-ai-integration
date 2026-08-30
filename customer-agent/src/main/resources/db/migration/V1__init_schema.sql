@@ -2,7 +2,7 @@
 -- Customer service initial schema for conversation, message, feedback and quick-question tables.
 
 CREATE TABLE conversations (
-    id                  BIGSERIAL       PRIMARY KEY,
+    id                  VARCHAR(36)     PRIMARY KEY,
     conversation_no     VARCHAR(64)     NOT NULL UNIQUE,
     customer_id         VARCHAR(64)     NOT NULL,
     status              VARCHAR(32)     NOT NULL,
@@ -14,8 +14,8 @@ CREATE TABLE conversations (
 );
 
 CREATE TABLE messages (
-    id                  BIGSERIAL       PRIMARY KEY,
-    conversation_id     BIGINT          NOT NULL REFERENCES conversations(id),
+    id                  VARCHAR(36)     PRIMARY KEY,
+    conversation_id     VARCHAR(36)     NOT NULL,
     seq_no              INT             NOT NULL,
     role                VARCHAR(16)     NOT NULL,
     content             TEXT            NOT NULL,
@@ -26,8 +26,8 @@ CREATE TABLE messages (
 );
 
 CREATE TABLE feedback (
-    id                  BIGSERIAL       PRIMARY KEY,
-    conversation_id    BIGINT          NOT NULL,
+    id                  VARCHAR(36)     PRIMARY KEY,
+    conversation_id     VARCHAR(36)     NOT NULL,
     rating              VARCHAR(16)     NOT NULL,
     comment             VARCHAR(500),
     submitted_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +37,7 @@ CREATE TABLE feedback (
 );
 
 CREATE TABLE quick_questions (
-    id                  BIGSERIAL       PRIMARY KEY,
+    id                  VARCHAR(36)     PRIMARY KEY,
     sort_order          INT             NOT NULL,
     question_text       VARCHAR(256)    NOT NULL,
     enabled             BOOLEAN         NOT NULL DEFAULT TRUE,
@@ -48,7 +48,7 @@ CREATE TABLE quick_questions (
 );
 
 CREATE TABLE idempotency_records (
-    id              BIGSERIAL       PRIMARY KEY,
+    id              VARCHAR(36)     PRIMARY KEY,
     operation       VARCHAR(64)     NOT NULL,
     idempotency_key VARCHAR(128)    NOT NULL,
     request_hash    VARCHAR(64)     NOT NULL,
@@ -60,9 +60,9 @@ CREATE TABLE idempotency_records (
     CONSTRAINT uk_idempotency_key UNIQUE (operation, idempotency_key)
 );
 
-INSERT INTO quick_questions (sort_order, question_text, enabled) VALUES
-    (1, '我的订单到哪了？', TRUE),
-    (2, '如何申请退款？', TRUE),
-    (3, '如何修改收货地址？', TRUE),
-    (4, '支付方式有哪些？', TRUE),
-    (5, '如何联系人工客服？', TRUE);
+INSERT INTO quick_questions (id, sort_order, question_text, enabled) VALUES
+    ('0191aa00-0000-7000-8000-000000000001', 1, '我的订单到哪了？', TRUE),
+    ('0191aa00-0000-7000-8000-000000000002', 2, '如何申请退款？', TRUE),
+    ('0191aa00-0000-7000-8000-000000000003', 3, '如何修改收货地址？', TRUE),
+    ('0191aa00-0000-7000-8000-000000000004', 4, '支付方式有哪些？', TRUE),
+    ('0191aa00-0000-7000-8000-000000000005', 5, '如何联系人工客服？', TRUE);

@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -20,6 +18,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.acm.ca.domain.shared.AuditMetadata;
+import org.acm.common.persistence.UUIDv7Sequence;
 
 @Entity
 @Table(
@@ -34,9 +33,7 @@ import org.acm.ca.domain.shared.AuditMetadata;
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Feedback extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   @Enumerated(EnumType.STRING)
   private FeedbackRating rating;

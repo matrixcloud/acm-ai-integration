@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * <p>Lookups are scoped by (operation, idempotencyKey) to detect replay of a previously completed
  * request.
  */
-public interface IdempotencyRecordRepository extends JpaRepository<IdempotencyRecord, Long> {
+public interface IdempotencyRecordRepository extends JpaRepository<IdempotencyRecord, String> {
   Optional<IdempotencyRecord> findByOperationAndIdempotencyKey(
       String operation, String idempotencyKey);
 }

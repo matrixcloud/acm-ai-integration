@@ -1,8 +1,6 @@
 package org.acm.kb.domain.eval;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -10,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.acm.kb.domain.shared.InvalidRequestException;
 
 /**
@@ -25,11 +24,9 @@ import org.acm.kb.domain.shared.InvalidRequestException;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class EvaluationCase {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
-  private Long suiteId;
+  private String suiteId;
   private int seqNo;
   private String query;
   private String expectedAnswer;
@@ -43,7 +40,7 @@ public final class EvaluationCase {
    * @param expectedAnswer optional reference answer
    * @return a new {@link EvaluationCase}
    */
-  public static EvaluationCase of(Long suiteId, int seqNo, String query, String expectedAnswer) {
+  public static EvaluationCase of(String suiteId, int seqNo, String query, String expectedAnswer) {
     String trimmedQuery = trimQuery(query);
     EvaluationCase caseEntity = new EvaluationCase();
     caseEntity.suiteId = suiteId;

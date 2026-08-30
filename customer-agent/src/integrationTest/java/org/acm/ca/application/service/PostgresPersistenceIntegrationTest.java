@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import jakarta.persistence.EntityManager;
 import java.util.Map;
+import java.util.UUID;
 import org.acm.ca.application.idempotency.IdempotencyRecordRepository;
 import org.acm.ca.domain.conversation.Conversation;
 import org.acm.ca.domain.conversation.ConversationRepository;
@@ -123,7 +124,8 @@ class PostgresPersistenceIntegrationTest {
     assertThatThrownBy(
             () ->
                 jdbcTemplate.update(
-                    "insert into messages (conversation_id, seq_no, role, content) values (?, ?, ?, ?)",
+                    "insert into messages (id, conversation_id, seq_no, role, content) values (?, ?, ?, ?, ?)",
+                    UUID.randomUUID().toString(),
                     saved.getId(),
                     1,
                     "CUSTOMER",
@@ -139,7 +141,8 @@ class PostgresPersistenceIntegrationTest {
     assertThatThrownBy(
             () ->
                 jdbcTemplate.update(
-                    "insert into messages (conversation_id, seq_no, role, content) values (?, ?, ?, ?)",
+                    "insert into messages (id, conversation_id, seq_no, role, content) values (?, ?, ?, ?, ?)",
+                    UUID.randomUUID().toString(),
                     saved.getId(),
                     1,
                     "CUSTOMER",
@@ -157,7 +160,8 @@ class PostgresPersistenceIntegrationTest {
     assertThatThrownBy(
             () ->
                 jdbcTemplate.update(
-                    "insert into feedback (conversation_id, rating, submitted_at) values (?, ?, ?)",
+                    "insert into feedback (id, conversation_id, rating, submitted_at) values (?, ?, ?, ?)",
+                    UUID.randomUUID().toString(),
                     saved.getId(),
                     "DISSATISFIED",
                     java.time.LocalDateTime.now()))

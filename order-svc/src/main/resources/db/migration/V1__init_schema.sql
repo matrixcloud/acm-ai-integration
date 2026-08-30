@@ -2,7 +2,7 @@
 -- Order service initial schema for create-order use case.
 
 CREATE TABLE orders (
-    id                        BIGSERIAL       PRIMARY KEY,
+    id                        VARCHAR(36)     PRIMARY KEY,
     order_no                  VARCHAR(64)     NOT NULL UNIQUE,
     customer_id               VARCHAR(64)     NOT NULL,
     status                    VARCHAR(32)     NOT NULL,
@@ -22,8 +22,8 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE order_items (
-    id              BIGSERIAL       PRIMARY KEY,
-    order_id        BIGINT          NOT NULL REFERENCES orders(id),
+    id              VARCHAR(36)     PRIMARY KEY,
+    order_id        VARCHAR(36)     NOT NULL,
     line_no         INT             NOT NULL,
     sku_id          VARCHAR(64)     NOT NULL,
     product_name    VARCHAR(256)    NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE order_items (
 );
 
 CREATE TABLE idempotency_records (
-    id              BIGSERIAL       PRIMARY KEY,
+    id              VARCHAR(36)     PRIMARY KEY,
     operation       VARCHAR(64)     NOT NULL,
     idempotency_key VARCHAR(128)    NOT NULL,
     request_hash    VARCHAR(64)     NOT NULL,

@@ -3,8 +3,6 @@ package org.acm.os.domain.payment;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -14,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.acm.os.domain.shared.AuditMetadata;
 import org.acm.os.domain.shared.BusinessNumberGenerator;
 
@@ -24,9 +23,7 @@ import org.acm.os.domain.shared.BusinessNumberGenerator;
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Payment extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String paymentNo;
   private String externalPaymentNo;

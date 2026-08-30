@@ -2,8 +2,6 @@ package org.acm.kb.domain.kb;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -12,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -30,17 +29,15 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class DocumentChunk {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
-  private Long documentId;
+  private String documentId;
   private int seqNo;
   private String content;
 
   @CreatedDate private LocalDateTime createdAt;
 
-  public static DocumentChunk of(Long documentId, int seqNo, String content) {
+  public static DocumentChunk of(String documentId, int seqNo, String content) {
     DocumentChunk chunk = new DocumentChunk();
     chunk.documentId = documentId;
     chunk.seqNo = seqNo;

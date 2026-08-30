@@ -10,5 +10,5 @@ public interface ShipmentUseCase {
 
   Order confirmReceipt(String orderNo, String shipmentNo, String idempotencyKey);
 
-  record ShipmentLine(Long orderItemId, Integer quantity) {}
+  record ShipmentLine(String orderItemId, Integer quantity) {}
 }

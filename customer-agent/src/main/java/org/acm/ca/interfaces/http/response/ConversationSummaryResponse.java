@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class ConversationSummaryResponse {
-  private Long id;
+  private String id;
   private String conversationNo;
   private String customerId;
   private String status;

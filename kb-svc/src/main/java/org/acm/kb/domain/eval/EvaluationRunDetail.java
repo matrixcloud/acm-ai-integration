@@ -2,8 +2,6 @@ package org.acm.kb.domain.eval;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -12,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -29,11 +28,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class EvaluationRunDetail {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
-  private Long runId;
+  private String runId;
   private String query;
   private String generatedAnswer;
   private double contextRelevancyScore;
@@ -54,7 +51,7 @@ public final class EvaluationRunDetail {
    * @return a new {@link EvaluationRunDetail}
    */
   public static EvaluationRunDetail of(
-      Long runId,
+      String runId,
       String query,
       String generatedAnswer,
       double contextRelevancyScore,

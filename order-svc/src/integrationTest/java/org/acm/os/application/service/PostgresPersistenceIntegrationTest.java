@@ -58,7 +58,8 @@ class PostgresPersistenceIntegrationTest {
 
   @BeforeEach
   void cleanDatabase() {
-    jdbcTemplate.execute("TRUNCATE TABLE orders, idempotency_records RESTART IDENTITY CASCADE");
+    jdbcTemplate.execute(
+        "TRUNCATE TABLE shipment_items, shipments, refunds, payments, order_items, orders, idempotency_records");
   }
 
   @Test

@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE knowledge_bases (
-    id                  BIGSERIAL       PRIMARY KEY,
+    id                  VARCHAR(36)     PRIMARY KEY,
     kb_no               VARCHAR(64)     NOT NULL UNIQUE,
     name                VARCHAR(100)    NOT NULL,
     status              VARCHAR(32)     NOT NULL,
@@ -18,9 +18,9 @@ CREATE TABLE knowledge_bases (
 );
 
 CREATE TABLE documents (
-    id                  BIGSERIAL       PRIMARY KEY,
+    id                  VARCHAR(36)     PRIMARY KEY,
     document_no         VARCHAR(64)     NOT NULL UNIQUE,
-    kb_id               BIGINT          NOT NULL REFERENCES knowledge_bases(id),
+    kb_id               VARCHAR(36)     NOT NULL,
     name                VARCHAR(255)    NOT NULL,
     status              VARCHAR(32)     NOT NULL,
     chunk_count         INT             NOT NULL DEFAULT 0,
@@ -32,8 +32,8 @@ CREATE TABLE documents (
 );
 
 CREATE TABLE document_chunks (
-    id                  BIGSERIAL       PRIMARY KEY,
-    document_id         BIGINT          NOT NULL REFERENCES documents(id),
+    id                  VARCHAR(36)     PRIMARY KEY,
+    document_id         VARCHAR(36)     NOT NULL,
     seq_no              INT             NOT NULL,
     content             TEXT            NOT NULL,
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -43,7 +43,7 @@ CREATE TABLE document_chunks (
 );
 
 CREATE TABLE evaluation_suites (
-    id                  BIGSERIAL       PRIMARY KEY,
+    id                  VARCHAR(36)     PRIMARY KEY,
     suite_no            VARCHAR(64)     NOT NULL UNIQUE,
     name                VARCHAR(100)    NOT NULL,
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,8 +52,8 @@ CREATE TABLE evaluation_suites (
 );
 
 CREATE TABLE evaluation_cases (
-    id                  BIGSERIAL       PRIMARY KEY,
-    suite_id            BIGINT          NOT NULL REFERENCES evaluation_suites(id),
+    id                  VARCHAR(36)     PRIMARY KEY,
+    suite_id            VARCHAR(36)     NOT NULL,
     seq_no              INT             NOT NULL,
     query               TEXT            NOT NULL,
     expected_answer     TEXT,
@@ -64,10 +64,10 @@ CREATE TABLE evaluation_cases (
 );
 
 CREATE TABLE evaluation_runs (
-    id                              BIGSERIAL       PRIMARY KEY,
+    id                              VARCHAR(36)     PRIMARY KEY,
     run_no                          VARCHAR(64)     NOT NULL UNIQUE,
     kb_no                           VARCHAR(64)     NOT NULL,
-    suite_id                        BIGINT          NOT NULL REFERENCES evaluation_suites(id),
+    suite_id                        VARCHAR(36)     NOT NULL,
     status                          VARCHAR(32)     NOT NULL,
     top_k                           INT             NOT NULL DEFAULT 5,
     context_relevancy_avg           DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -84,8 +84,8 @@ CREATE TABLE evaluation_runs (
 );
 
 CREATE TABLE evaluation_run_details (
-    id                          BIGSERIAL       PRIMARY KEY,
-    run_id                      BIGINT          NOT NULL REFERENCES evaluation_runs(id),
+    id                          VARCHAR(36)     PRIMARY KEY,
+    run_id                      VARCHAR(36)     NOT NULL,
     query                       TEXT            NOT NULL,
     generated_answer            TEXT,
     context_relevancy_score     DOUBLE PRECISION NOT NULL DEFAULT 0,

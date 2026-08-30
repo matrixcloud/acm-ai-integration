@@ -14,7 +14,7 @@ import lombok.Data;
  */
 @Data
 public class CreateOrderResponse {
-  private Long id;
+  private String id;
   private String orderNo;
   private String customerId;
   private String status;

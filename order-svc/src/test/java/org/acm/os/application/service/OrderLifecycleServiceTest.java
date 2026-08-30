@@ -218,7 +218,8 @@ class OrderLifecycleServiceTest {
         .thenReturn(new LogisticsClient.LogisticsShipment("TRACK-1"));
 
     Shipment result =
-        service.createShipment("ORD-1", "MOCK_EXPRESS", List.of(new ShipmentLine(1L, 1)), "key");
+        service.createShipment(
+            "ORD-1", "MOCK_EXPRESS", List.of(new ShipmentLine("item-1", 1)), "key");
 
     assertThat(result.getTrackingNo()).isEqualTo("TRACK-1");
     verify(order).allocateShipment(result);

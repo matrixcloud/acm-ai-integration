@@ -141,7 +141,7 @@ async function seedKb() {
 }
 
 // ─── order seed ────────────────────────────────────────────────────────────────
-function psqlInts(sql) {
+function psqlStrings(sql) {
   try {
     const out = execFileSync(
       'docker',
@@ -151,8 +151,7 @@ function psqlInts(sql) {
     return out
       .split('\n')
       .map((s) => s.trim())
-      .filter(Boolean)
-      .map(Number);
+      .filter(Boolean);
   } catch (e) {
     throw new Error(
       `psql 查询失败（发货需要 order_items.id，公共 API 未在订单详情中暴露该字段）: ${e.message}\nSQL: ${sql}`,
@@ -207,8 +206,8 @@ async function refund(order, n) {
 
 async function ship(order, n) {
   const lineNos = order.items.map((it) => it.lineNo).sort((a, b) => a - b);
-  const ids = psqlInts(
-    `SELECT id FROM order_items WHERE order_id = ${order.id} AND line_no IN (${lineNos.join(',')}) ORDER BY line_no`,
+  const ids = psqlStrings(
+    `SELECT id FROM order_items WHERE order_id = '${order.id}' AND line_no IN (${lineNos.join(',')}) ORDER BY line_no`,
   );
   if (ids.length !== order.items.length) {
     throw new Error(`order ${order.orderNo}: 期望 ${order.items.length} 个 order_item id，实际 ${ids.length}`);

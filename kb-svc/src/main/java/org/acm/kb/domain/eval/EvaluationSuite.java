@@ -1,8 +1,6 @@
 package org.acm.kb.domain.eval;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -13,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.acm.kb.domain.shared.AuditMetadata;
 import org.acm.kb.domain.shared.InvalidRequestException;
 
@@ -29,9 +28,7 @@ import org.acm.kb.domain.shared.InvalidRequestException;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class EvaluationSuite extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String suiteNo;
   private String name;

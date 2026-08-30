@@ -31,5 +31,5 @@ public interface ConversationUseCase {
 
   record MessageThread(String conversationNo, List<Message> messages) {}
 
-  record QuickQuestionItem(Long id, Integer sortOrder, String questionText) {}
+  record QuickQuestionItem(String id, Integer sortOrder, String questionText) {}
 }

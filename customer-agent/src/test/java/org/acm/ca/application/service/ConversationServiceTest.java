@@ -456,8 +456,8 @@ class ConversationServiceTest {
 
   @Test
   void listQuickQuestionsMapsEnabledQuickQuestionsToItems() {
-    QuickQuestion qq1 = quickQuestion(1L, 1, "How to track my order?");
-    QuickQuestion qq2 = quickQuestion(2L, 2, "How to return?");
+    QuickQuestion qq1 = quickQuestion("q1", 1, "How to track my order?");
+    QuickQuestion qq2 = quickQuestion("q2", 2, "How to return?");
     when(quickQuestionRepository.findByEnabledTrueOrderBySortOrderAsc())
         .thenReturn(List.of(qq1, qq2));
 
@@ -466,10 +466,11 @@ class ConversationServiceTest {
     assertThat(result)
         .extracting(
             QuickQuestionItem::id, QuickQuestionItem::sortOrder, QuickQuestionItem::questionText)
-        .containsExactly(tuple(1L, 1, "How to track my order?"), tuple(2L, 2, "How to return?"));
+        .containsExactly(
+            tuple("q1", 1, "How to track my order?"), tuple("q2", 2, "How to return?"));
   }
 
-  private static QuickQuestion quickQuestion(Long id, int sortOrder, String questionText) {
+  private static QuickQuestion quickQuestion(String id, int sortOrder, String questionText) {
     QuickQuestion qq = new QuickQuestion();
     qq.setId(id);
     qq.setSortOrder(sortOrder);

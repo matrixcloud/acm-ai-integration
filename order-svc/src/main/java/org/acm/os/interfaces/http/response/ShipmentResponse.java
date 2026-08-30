@@ -16,7 +16,7 @@ public class ShipmentResponse {
 
   @Data
   public static class Item {
-    private Long orderItemId;
+    private String orderItemId;
     private Integer quantity;
   }
 }

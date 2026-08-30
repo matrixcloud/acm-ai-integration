@@ -17,7 +17,7 @@ import org.springframework.data.repository.query.Param;
  * whole (order + order items) within a single transaction via {@link JpaRepository#save(Object)
  * save}.
  */
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, String> {
 
   /**
    * @param orderNo system-generated order number

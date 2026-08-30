@@ -7,7 +7,9 @@ version = '0.0.1-SNAPSHOT'
 
 dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+    compileOnly 'org.hibernate.orm:hibernate-core:7.4.5.Final'
     implementation 'org.slf4j:slf4j-api:2.0.18'
+    implementation 'com.github.f4b6a3:uuid-creator:6.1.1'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

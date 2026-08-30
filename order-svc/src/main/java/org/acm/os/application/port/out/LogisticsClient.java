@@ -21,7 +21,7 @@ public interface LogisticsClient {
       String district,
       String detailAddress) {}
 
-  record ShipmentItem(Long orderItemId, Integer quantity) {}
+  record ShipmentItem(String orderItemId, Integer quantity) {}
 
   record LogisticsShipment(String trackingNo) {}
 }

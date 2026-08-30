@@ -4,8 +4,6 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -24,6 +22,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.acm.os.domain.payment.Payment;
 import org.acm.os.domain.payment.PaymentStatus;
 import org.acm.os.domain.refund.Refund;
@@ -51,9 +50,7 @@ import org.hibernate.annotations.FetchMode;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Order extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String orderNo;
   private String customerId;
@@ -445,7 +442,7 @@ public final class Order extends AuditMetadata {
         .orElseThrow(() -> new OrderStateConflictException("Order has no successful payment"));
   }
 
-  private int shippedQuantity(Long orderItemId) {
+  private int shippedQuantity(String orderItemId) {
     return shipments.stream()
         .flatMap(shipment -> shipment.getItems().stream())
         .filter(item -> item.getOrderItemId().equals(orderItemId))

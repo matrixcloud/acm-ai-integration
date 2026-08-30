@@ -114,7 +114,13 @@ class IdempotencyServiceTest {
   void executeRejectsPendingOperation() {
     IdempotencyRecord pending =
         new IdempotencyRecord(
-            1L, OPERATION, KEY, sha256(REQUEST_JSON), null, null, IdempotencyRecord.STATUS_PENDING);
+            "record-1",
+            OPERATION,
+            KEY,
+            sha256(REQUEST_JSON),
+            null,
+            null,
+            IdempotencyRecord.STATUS_PENDING);
     when(objectMapper.writeValueAsString(REQUEST)).thenReturn(REQUEST_JSON);
     when(repository.findByOperationAndIdempotencyKey(OPERATION, KEY))
         .thenReturn(Optional.of(pending));
@@ -162,7 +168,7 @@ class IdempotencyServiceTest {
 
     assertThatThrownBy(() -> service.execute(operation(KEY), action))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("id=1, operation='create-order', key='key-1'")
+        .hasMessageContaining("id=record-1, operation='create-order', key='key-1'")
         .hasMessageContaining("targetType=java.lang.String")
         .hasCause(failure);
   }
@@ -236,7 +242,13 @@ class IdempotencyServiceTest {
 
   private static IdempotencyRecord completedRecord(String requestHash) {
     return new IdempotencyRecord(
-        1L, OPERATION, KEY, requestHash, "\"created\"", null, IdempotencyRecord.STATUS_COMPLETED);
+        "record-1",
+        OPERATION,
+        KEY,
+        requestHash,
+        "\"created\"",
+        null,
+        IdempotencyRecord.STATUS_COMPLETED);
   }
 
   private static String sha256(String value) {

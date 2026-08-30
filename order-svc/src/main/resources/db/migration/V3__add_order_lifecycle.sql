@@ -1,6 +1,6 @@
 CREATE TABLE payments (
-    id                  BIGSERIAL       PRIMARY KEY,
-    order_id            BIGINT          NOT NULL REFERENCES orders(id),
+    id                  VARCHAR(36)     PRIMARY KEY,
+    order_id            VARCHAR(36)     NOT NULL,
     payment_no          VARCHAR(64)     NOT NULL UNIQUE,
     external_payment_no VARCHAR(128)    UNIQUE,
     status              VARCHAR(32)     NOT NULL,
@@ -14,8 +14,8 @@ CREATE TABLE payments (
 );
 
 CREATE TABLE refunds (
-    id                  BIGSERIAL       PRIMARY KEY,
-    order_id            BIGINT          NOT NULL REFERENCES orders(id),
+    id                  VARCHAR(36)     PRIMARY KEY,
+    order_id            VARCHAR(36)     NOT NULL,
     refund_no           VARCHAR(64)     NOT NULL UNIQUE,
     type                VARCHAR(32)     NOT NULL,
     status              VARCHAR(32)     NOT NULL,
@@ -35,8 +35,8 @@ CREATE TABLE refunds (
 );
 
 CREATE TABLE shipments (
-    id              BIGSERIAL       PRIMARY KEY,
-    order_id        BIGINT          NOT NULL REFERENCES orders(id),
+    id              VARCHAR(36)     PRIMARY KEY,
+    order_id        VARCHAR(36)     NOT NULL,
     shipment_no     VARCHAR(64)     NOT NULL UNIQUE,
     status          VARCHAR(32)     NOT NULL,
     carrier_code    VARCHAR(64)     NOT NULL,
@@ -48,9 +48,9 @@ CREATE TABLE shipments (
 );
 
 CREATE TABLE shipment_items (
-    id              BIGSERIAL       PRIMARY KEY,
-    shipment_id     BIGINT          NOT NULL REFERENCES shipments(id),
-    order_item_id   BIGINT          NOT NULL REFERENCES order_items(id),
+    id              VARCHAR(36)     PRIMARY KEY,
+    shipment_id     VARCHAR(36)     NOT NULL,
+    order_item_id   VARCHAR(36)     NOT NULL,
     quantity        INT             NOT NULL,
     CONSTRAINT uk_shipment_item UNIQUE (shipment_id, order_item_id),
     CONSTRAINT chk_shipment_quantity_positive CHECK (quantity > 0)

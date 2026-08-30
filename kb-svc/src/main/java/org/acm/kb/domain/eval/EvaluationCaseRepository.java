@@ -3,9 +3,9 @@ package org.acm.kb.domain.eval;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface EvaluationCaseRepository extends JpaRepository<EvaluationCase, Long> {
+public interface EvaluationCaseRepository extends JpaRepository<EvaluationCase, String> {
 
-  List<EvaluationCase> findBySuiteId(Long suiteId);
+  List<EvaluationCase> findBySuiteId(String suiteId);
 
-  long countBySuiteId(Long suiteId);
+  long countBySuiteId(String suiteId);
 }

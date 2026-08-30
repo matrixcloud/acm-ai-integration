@@ -1,8 +1,6 @@
 package org.acm.ca.application.idempotency;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -12,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.acm.ca.domain.shared.AuditMetadata;
+import org.acm.common.persistence.UUIDv7Sequence;
 
 @Entity
 @Table(
@@ -28,9 +27,7 @@ public final class IdempotencyRecord extends AuditMetadata {
   public static final String STATUS_PENDING = "PENDING";
   public static final String STATUS_COMPLETED = "COMPLETED";
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String operation;
   private String idempotencyKey;

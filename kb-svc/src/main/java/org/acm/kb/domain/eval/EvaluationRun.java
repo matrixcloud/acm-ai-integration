@@ -3,8 +3,6 @@ package org.acm.kb.domain.eval;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -15,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.acm.common.persistence.UUIDv7Sequence;
 import org.acm.kb.domain.shared.AuditMetadata;
 
 /**
@@ -31,13 +30,11 @@ import org.acm.kb.domain.shared.AuditMetadata;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class EvaluationRun extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String runNo;
   private String kbNo;
-  private Long suiteId;
+  private String suiteId;
 
   @Enumerated(EnumType.STRING)
   private EvaluationRunStatus status;
@@ -60,7 +57,7 @@ public final class EvaluationRun extends AuditMetadata {
    * @param topK retrieval top-K parameter
    * @return a new {@link EvaluationRun}
    */
-  public static EvaluationRun create(String kbNo, Long suiteId, int topK) {
+  public static EvaluationRun create(String kbNo, String suiteId, int topK) {
     EvaluationRun run = new EvaluationRun();
     run.runNo = generateRunNo();
     run.kbNo = kbNo;

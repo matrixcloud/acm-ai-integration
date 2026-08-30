@@ -4,8 +4,6 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -25,6 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.acm.ca.domain.shared.AuditMetadata;
 import org.acm.ca.domain.shared.InvalidRequestException;
+import org.acm.common.persistence.UUIDv7Sequence;
 
 @Entity
 @Table(name = "conversations")
@@ -33,9 +32,7 @@ import org.acm.ca.domain.shared.InvalidRequestException;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Conversation extends AuditMetadata {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Id @UUIDv7Sequence private String id;
 
   private String conversationNo;
   private String customerId;

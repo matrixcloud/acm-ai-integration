@@ -101,7 +101,7 @@ class OrderLifecycleTest {
   void splitShipmentTransitionsToCompletedAndBlocksRefund() {
     Order order = paidOrder(2);
     Shipment first =
-        Shipment.create("SHP-1", "MOCK_EXPRESS", "TRACK-1", List.of(ShipmentItem.of(1L, 1)));
+        Shipment.create("SHP-1", "MOCK_EXPRESS", "TRACK-1", List.of(ShipmentItem.of("item-1", 1)));
     order.allocateShipment(first);
     assertThat(order.getStatus()).isEqualTo(OrderStatus.PARTIALLY_SHIPPED);
     assertThatThrownBy(() -> order.requestRefund("refund"))
@@ -110,7 +110,7 @@ class OrderLifecycleTest {
     assertThat(order.getStatus()).isEqualTo(OrderStatus.PARTIALLY_SHIPPED);
 
     Shipment second =
-        Shipment.create("SHP-2", "MOCK_EXPRESS", "TRACK-2", List.of(ShipmentItem.of(1L, 1)));
+        Shipment.create("SHP-2", "MOCK_EXPRESS", "TRACK-2", List.of(ShipmentItem.of("item-1", 1)));
     order.allocateShipment(second);
     assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED);
 
@@ -128,17 +128,17 @@ class OrderLifecycleTest {
     assertThatThrownBy(
             () ->
                 order.validateShipmentItems(
-                    List.of(ShipmentItem.of(1L, 1), ShipmentItem.of(1L, 1))))
+                    List.of(ShipmentItem.of("item-1", 1), ShipmentItem.of("item-1", 1))))
         .isInstanceOf(ShipmentQuantityExceededException.class);
-    assertThatThrownBy(() -> order.validateShipmentItems(List.of(ShipmentItem.of(99L, 1))))
+    assertThatThrownBy(() -> order.validateShipmentItems(List.of(ShipmentItem.of("item-99", 1))))
         .isInstanceOf(ShipmentQuantityExceededException.class);
-    assertThatThrownBy(() -> order.validateShipmentItems(List.of(ShipmentItem.of(1L, 2))))
+    assertThatThrownBy(() -> order.validateShipmentItems(List.of(ShipmentItem.of("item-1", 2))))
         .isInstanceOf(ShipmentQuantityExceededException.class);
     assertThatThrownBy(() -> order.confirmShipmentDelivered("missing"))
         .isInstanceOf(OrderStateConflictException.class);
 
     Order pending = order(1);
-    assertThatThrownBy(() -> pending.validateShipmentItems(List.of(ShipmentItem.of(1L, 1))))
+    assertThatThrownBy(() -> pending.validateShipmentItems(List.of(ShipmentItem.of("item-1", 1))))
         .isInstanceOf(OrderStateConflictException.class);
   }
 
@@ -151,7 +151,7 @@ class OrderLifecycleTest {
 
   private static Order order(int quantity) {
     OrderItem item = new OrderItem();
-    item.setId(1L);
+    item.setId("item-1");
     item.setSkuId("SKU-001");
     item.setProductName("Mouse");
     item.setUnitPrice(new BigDecimal("99.00"));
