@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,6 +49,7 @@ class AgentServiceTest {
 
     kbSearchTool = mock(KbSearchTool.class);
     orderQueryTool = mock(OrderQueryTool.class);
+    when(kbSearchTool.catalogText()).thenReturn("KB-1：退款政策（3 篇文档）");
     ReplyRulesConfig config = configWithRefundRule();
     service =
         new AgentService(
@@ -61,7 +63,7 @@ class AgentServiceTest {
 
   private static ReplyRulesConfig configWithRefundRule() {
     return new ReplyRulesConfig(
-        "default-prompt", "KB-1", 5, List.of(new ReplyRule("REFUND", "退款,退货", "refund-prompt", 8)));
+        "default-prompt", 5, List.of(new ReplyRule("REFUND", "退款,退货", "refund-prompt", 8)));
   }
 
   private static GenerateReplyCommand command(String message) {
@@ -85,6 +87,7 @@ class AgentServiceTest {
 
     verify(requestSpec).tools(orderQueryTool);
     verify(requestSpec, never()).tools(kbSearchTool);
+    verify(kbSearchTool, never()).catalogText();
     verify(stream).emitChunk("您");
     verify(stream).emitChunk("好");
     verify(stream).emitDone("您好");
@@ -99,6 +102,7 @@ class AgentServiceTest {
 
     verify(requestSpec).tools(orderQueryTool);
     verify(requestSpec).tools(kbSearchTool);
+    verify(requestSpec).system(contains("可用知识库清单"));
     verify(stream).emitDone("请稍候");
   }
 

@@ -1,8 +1,8 @@
 package org.acm.kb.interfaces.http.mapper;
 
 import java.util.List;
-import org.acm.kb.application.port.out.KbSearchClient.KbChunk;
 import org.acm.kb.domain.kb.Document;
+import org.acm.kb.domain.kb.KbChunk;
 import org.acm.kb.domain.kb.KnowledgeBase;
 import org.acm.kb.interfaces.http.response.DocumentResponse;
 import org.acm.kb.interfaces.http.response.KbDetailResponse;

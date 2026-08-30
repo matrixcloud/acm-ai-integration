@@ -2,8 +2,8 @@ package org.acm.kb.application.port.in;
 
 import java.util.List;
 import org.acm.kb.application.port.in.command.SearchCommand;
-import org.acm.kb.application.port.out.KbSearchClient.KbChunk;
 import org.acm.kb.domain.kb.Document;
+import org.acm.kb.domain.kb.KbChunk;
 import org.acm.kb.domain.kb.KnowledgeBase;
 import org.springframework.web.multipart.MultipartFile;
 

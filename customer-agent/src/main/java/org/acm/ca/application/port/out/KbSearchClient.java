@@ -9,7 +9,13 @@ public interface KbSearchClient {
 
   List<KbChunk> search(SearchRequest request);
 
+  /** Lists active knowledge bases for routing retrieval targets. */
+  List<KbSummary> listActive();
+
   record SearchRequest(String kbNo, String query, int topK) {}
 
   record KbChunk(String content, double score, String documentNo, String documentName) {}
+
+  /** Summary of an active knowledge base. */
+  record KbSummary(String kbNo, String name, int docCount) {}
 }

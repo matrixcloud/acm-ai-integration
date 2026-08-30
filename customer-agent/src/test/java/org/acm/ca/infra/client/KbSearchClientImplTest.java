@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import org.acm.ca.application.port.out.KbSearchClient;
 import org.acm.ca.application.port.out.KbSearchClient.KbChunk;
+import org.acm.ca.application.port.out.KbSearchClient.KbSummary;
 import org.acm.ca.application.port.out.KbSearchClient.SearchRequest;
 import org.acm.ca.application.port.out.KbSearchUnavailableException;
 import org.acm.ca.application.port.out.TransientKbSearchException;
@@ -31,6 +32,14 @@ class KbSearchClientImplTest {
 
   private static final String REQUEST_URL = "http://kb-svc/kbs/KB-2026-0001/search";
   private static final SearchRequest REQUEST = new SearchRequest("KB-2026-0001", "退款政策", 5);
+  private static final String LIST_URL = "http://kb-svc/kbs";
+  private static final String KBS_JSON =
+      """
+      [
+        {"kbNo": "KB-2026-0001", "name": "退款政策", "status": "ACTIVE", "docCount": 3},
+        {"kbNo": "KB-2026-0002", "name": "发票规则", "status": "ARCHIVED", "docCount": 1}
+      ]
+      """;
   private static final String CHUNKS_JSON =
       """
       {
@@ -164,6 +173,64 @@ class KbSearchClientImplTest {
       assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(100));
       fixture.server().verify();
     }
+  }
+
+  @Test
+  void listActiveFiltersArchivedKnowledgeBases() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(LIST_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("API-Version", "1"))
+        .andRespond(withSuccess(KBS_JSON, MediaType.APPLICATION_JSON));
+
+    List<KbSummary> kbs = fixture.client().listActive();
+
+    assertThat(kbs).hasSize(1);
+    assertThat(kbs.get(0).kbNo()).isEqualTo("KB-2026-0001");
+    assertThat(kbs.get(0).name()).isEqualTo("退款政策");
+    assertThat(kbs.get(0).docCount()).isEqualTo(3);
+    fixture.server().verify();
+  }
+
+  @Test
+  void listActiveFailsFastOnMissingBody() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(LIST_URL))
+        .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
+
+    assertThatThrownBy(() -> fixture.client().listActive())
+        .isInstanceOf(KbSearchUnavailableException.class)
+        .hasMessage("KB list response body must not be null");
+    fixture.server().verify();
+  }
+
+  @Test
+  void listActiveThrowsTransientOnServiceUnavailable() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(LIST_URL))
+        .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+
+    assertThatThrownBy(() -> fixture.client().listActive())
+        .isInstanceOf(TransientKbSearchException.class)
+        .hasMessage("KB service transient failure: HTTP 503 SERVICE_UNAVAILABLE");
+    fixture.server().verify();
+  }
+
+  @Test
+  void listActiveThrowsStableOnUnknownKb() {
+    Fixture fixture = fixture();
+    fixture.server().expect(requestTo(LIST_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertThatThrownBy(() -> fixture.client().listActive())
+        .isInstanceOf(KbSearchUnavailableException.class)
+        .hasMessage("Unexpected kb-svc response status: HTTP 404 NOT_FOUND");
+    fixture.server().verify();
   }
 
   private Fixture fixture() {

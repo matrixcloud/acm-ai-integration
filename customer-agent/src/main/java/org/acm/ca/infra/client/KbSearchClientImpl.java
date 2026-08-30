@@ -79,6 +79,41 @@ public class KbSearchClientImpl implements KbSearchClient {
     }
   }
 
+  @Override
+  public List<KbSummary> listActive() {
+    long start = System.nanoTime();
+    try {
+      List<KbSummaryResponse> responses = kbServiceHttpClient.listActive(API_VERSION);
+      if (responses == null) {
+        throw new KbSearchUnavailableException("KB list response body must not be null");
+      }
+      List<KbSummary> summaries =
+          responses.stream()
+              .filter(r -> "ACTIVE".equals(r.status()))
+              .map(r -> new KbSummary(r.kbNo(), r.name(), r.docCount()))
+              .toList();
+      log.info(
+          "http.out service=kb-svc op=listActive kbs={} durationMs={}",
+          summaries.size(),
+          (System.nanoTime() - start) / 1_000_000);
+      return summaries;
+    } catch (KbSearchUnavailableException e) {
+      throw e;
+    } catch (NoFallbackAvailableException e) {
+      throw unwrapTransportFailure(e);
+    } catch (HttpStatusCodeException e) {
+      throw toUnavailable(e);
+    } catch (ResourceAccessException e) {
+      throw new TransientKbSearchException("KB service connection failed", e);
+    } catch (CallNotPermittedException e) {
+      throw new KbSearchUnavailableException("KB service circuit breaker is open", e);
+    } catch (Exception e) {
+      throw new KbSearchUnavailableException("KB list response contract violated", e);
+    }
+  }
+
+  public record KbSummaryResponse(String kbNo, String name, String status, int docCount) {}
+
   /**
    * With the circuit breaker decorator on the HTTP service group, transport failures surface
    * wrapped in {@link NoFallbackAvailableException}; unwrap them so the retry policy sees the

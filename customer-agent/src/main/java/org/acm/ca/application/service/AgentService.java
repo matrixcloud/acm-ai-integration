@@ -69,6 +69,12 @@ public class AgentService implements AgentUseCase {
 
     try (var scope = observation.openScope()) {
       String systemPrompt = rule.map(ReplyRule::systemPrompt).orElse(config.defaultSystemPrompt());
+      if (rule.isEmpty()) {
+        String catalog = kbSearchTool.catalogText();
+        if (catalog != null && !catalog.isBlank()) {
+          systemPrompt = systemPrompt + "\n\n可用知识库清单：\n" + catalog;
+        }
+      }
       String userMessage = buildUserMessage(command);
 
       var spec = chatClient.prompt().system(systemPrompt).user(userMessage).tools(orderQueryTool);
