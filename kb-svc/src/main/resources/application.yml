@@ -13,7 +13,7 @@ spring:
   ai:
     openai:
       api-key: ${DASHSCOPE_API_KEY}
-      base-url: https://llm-e9ka6krk9oaxv2lp.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+      base-url: ${DASHSCOPE_URL:https://llm-e9ka6krk9oaxv2lp.cn-beijing.maas.aliyuncs.com/compatible-mode/v1}
       embedding:
         model: text-embedding-v4
         dimensions: 1024
