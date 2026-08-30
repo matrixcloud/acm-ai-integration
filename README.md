@@ -54,6 +54,10 @@ acm-ai-integration/
 - [lefthook](https://lefthook.dev)（Git 钩子；`brew install lefthook`）
 - 环境变量 `DASHSCOPE_API_KEY`（AI 相关服务需要）
 
+## 快速 DEMO
+
+人机皆可读的[快速 DEMO 启动指南](docs/quick_demo.md)。
+
 ## 快速开始
 
 ### 1. 启动基础设施
