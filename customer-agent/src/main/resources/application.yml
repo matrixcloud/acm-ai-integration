@@ -2,7 +2,7 @@ spring:
   application:
     name: customer-agent
   datasource:
-    url: jdbc:postgresql://localhost:5432/cs
+    url: jdbc:postgresql://localhost:5432/cs-agent
     username: acm
     password: Qwerty123!
   flyway:
@@ -12,9 +12,8 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
       chat:
-        model: qwen-plus
-        options:
-          temperature: 0.7
+        model: qwen3.8-flash
+        temperature: 0.7
 
 server:
   port: 8010
