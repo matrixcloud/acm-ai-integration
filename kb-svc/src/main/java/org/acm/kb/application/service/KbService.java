@@ -222,7 +222,8 @@ public class KbService implements KbUseCase {
       Map<String, Object> metadata = result.getMetadata();
       String documentNo = String.valueOf(metadata.getOrDefault("document_no", ""));
       String documentName = String.valueOf(metadata.getOrDefault("document_name", ""));
-      double score = result.getScore() != null ? result.getScore() : 0.0;
+      Double rawScore = result.getScore();
+      double score = rawScore != null ? rawScore : 0.0;
       chunks.add(new KbChunk(result.getText(), score, documentNo, documentName));
     }
     log.info(

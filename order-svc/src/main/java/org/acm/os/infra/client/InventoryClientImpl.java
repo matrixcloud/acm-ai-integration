@@ -34,7 +34,7 @@ public class InventoryClientImpl implements InventoryClient {
   private MockFailureRegistry failureRegistry = new MockFailureRegistry();
 
   @Autowired
-  void setFailureRegistry(MockFailureRegistry failureRegistry) {
+  synchronized void setFailureRegistry(MockFailureRegistry failureRegistry) {
     this.failureRegistry = failureRegistry;
   }
 

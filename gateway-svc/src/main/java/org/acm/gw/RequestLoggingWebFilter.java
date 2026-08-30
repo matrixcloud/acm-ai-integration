@@ -1,5 +1,6 @@
 package org.acm.gw;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +51,7 @@ public class RequestLoggingWebFilter implements WebFilter, Ordered {
     if (forwarded != null && !forwarded.isEmpty()) {
       return forwarded.get(0).split(",")[0].trim();
     }
-    return request.getRemoteAddress() == null
-        ? "unknown"
-        : request.getRemoteAddress().getAddress().getHostAddress();
+    InetSocketAddress remoteAddress = request.getRemoteAddress();
+    return remoteAddress == null ? "unknown" : remoteAddress.getAddress().getHostAddress();
   }
 }

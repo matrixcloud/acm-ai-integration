@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/master/spotbugs/etc/findbugsfilter.xsd">
+
+  <!--
+    DTO/record（命名后缀匹配）：返回可变 List 是数据传输意图，非内部表示泄漏。
+    业务聚合根（如 Order）已用 unmodifiable/defensive copy 防护，不在此列，仍受 EI 检测。
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP, EI_EXPOSE_REP2"/>
+    <Class name="~.*(Request|Response|Command|Query|Summary|Report|Thread|Config)$"/>
+  </Match>
+
+  <!--
+    非 DTO 特例：Builder 收集参数、Spring 框架对象（MeterRegistry/ObservationRegistry）注入，
+    EI2 报「存储外部可变对象」实为误报。
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Or>
+      <Class name="org.acm.kb.infra.splitter.RecursiveCharacterTextSplitter$Builder"/>
+      <Class name="org.acm.ca.infra.observability.ToolCallObservingAdvisor"/>
+      <Class name="org.acm.ca.application.service.AgentService"/>
+    </Or>
+  </Match>
+
+  <!-- LLM prompt 模板里的 \n 是传给模型的文本，不是控制台/文件输出换行。 -->
+  <Match>
+    <Bug code="FS"/>
+    <Class name="org.acm.kb.application.service.EvaluationService"/>
+  </Match>
+
+  <!--
+    Hibernate lazy collection 的 size() 触发懒加载，spotbugs 误判为「无副作用」。
+    Order.getItems()/getPayments() 等返回 unmodifiable wrapper，Hibernate.initialize
+    只识别 HibernateProxy/PersistentCollection，对 wrapper 静默无效果，故保留 size()
+    触发语义。lambda 内的 size() 被 SpotBugs 归到合成方法，<Method> 无法精确匹配，
+    故按类豁免（WAIVER）；这两个类当前无其它 RV，新增 RV 时需复核此豁免范围。
+  -->
+  <Match>
+    <Bug code="RV"/>
+    <Or>
+      <Class name="org.acm.os.application.service.OrderService"/>
+      <Class name="org.acm.os.application.service.OrderLifecycleService"/>
+    </Or>
+  </Match>
+</FindBugsFilter>

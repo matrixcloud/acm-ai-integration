@@ -1,6 +1,7 @@
 plugins {
     id 'base'
     id 'com.diffplug.spotless' version '8.10.1'
+    id 'com.github.spotbugs' version '6.5.11' apply false
 }
 allprojects {
     group = 'org.acm'
@@ -43,6 +44,18 @@ subprojects {
             }
         }
 
+        apply plugin: 'jacoco'
+        apply plugin: 'checkstyle'
+        checkstyle {
+            toolVersion = '10.24.0'
+        }
+        apply plugin: 'com.github.spotbugs'
+        spotbugs {
+            effort = 'max'
+            excludeFilter = rootProject.file('config/spotbugs/exclude.xml')
+        }
+        tasks.matching { it.name.startsWith('spotbugs') && it.name != 'spotbugsMain' }
+            .configureEach { enabled = false }
         tasks.named('test') {
             useJUnitPlatform()
         }

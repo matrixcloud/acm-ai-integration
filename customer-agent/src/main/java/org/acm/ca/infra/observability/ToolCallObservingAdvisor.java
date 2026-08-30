@@ -22,7 +22,7 @@ import reactor.core.publisher.Flux;
 @Component
 public class ToolCallObservingAdvisor implements CallAdvisor, StreamAdvisor {
 
-  private static final Logger logger = LoggerFactory.getLogger(ToolCallObservingAdvisor.class);
+  private static final Logger log = LoggerFactory.getLogger(ToolCallObservingAdvisor.class);
 
   private final MeterRegistry meterRegistry;
 
@@ -66,8 +66,7 @@ public class ToolCallObservingAdvisor implements CallAdvisor, StreamAdvisor {
                 meterRegistry
                     .counter("agent.tool.calls", "name", toolCall.name(), "status", "requested")
                     .increment();
-                logger.info(
-                    "agent.tool.call name={} args={}", toolCall.name(), toolCall.arguments());
+                log.info("agent.tool.call name={} args={}", toolCall.name(), toolCall.arguments());
               });
     } else {
       meterRegistry.counter("agent.react.iterations", "outcome", "final").increment();

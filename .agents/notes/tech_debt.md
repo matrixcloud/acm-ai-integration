@@ -52,3 +52,47 @@
 - 起因：响应 DTO `CreateOrderResponse.Item` 无 `id` 字段，MapStruct 按名映射时静默丢弃 `OrderItem.id`
 - 消除方式：在 `CreateOrderResponse.Item` 增加 `id`（MapStruct 自动映射）或新增 `orderItemId` 字段；验证 shipping 集成测试是否可改为纯 HTTP
 - 来源：seed 交付（发现于 order-svc 冒烟）
+## 2026-08-30 order-svc initializeDetails 用 size() 触发 Hibernate 懒加载
+
+- 位置：`order-svc` `OrderService.java:140,142`、`OrderLifecycleService.java:314,317` 的 `initializeDetails`
+- 现状：用 `order.getPayments().size()`、`getShipments().forEach(s -> s.getItems().size())` 触发集合懒加载，返回值被忽略
+- 影响：SpotBugs `RV: size() ignored`（effort=max）；意图不透明，代码味道差
+- 起因：Hibernate 懒加载初始化的惯用 hack
+- 消除方式：已处理——`Hibernate.initialize` 对 unmodifiable wrapper 无效；lambda 内的 size() 被 SpotBugs 归到合成方法、`<Method>` 无法精确匹配，故按类豁免（`code=RV` + `OrderService`/`OrderLifecycleService`，WAIVER）；两个类当前无其它 RV，新增 RV 时需复核此豁免
+- 来源：质量关卡垂直切片 SpotBugs（2026-08-30）
+
+## 2026-08-30 InventoryClientImpl.failureRegistry 同步不一致
+
+- 位置：`order-svc` `InventoryClientImpl.java:38`，读端 `synchronized`、写端 `@Autowired setFailureRegistry` 非同步
+- 现状：SpotBugs `IS` 报 inconsistent synchronization（locked 80% of time）
+- 影响：实际 Spring 单线程注入、启动后只读，false positive，无真实并发问题
+- 起因：mock 组件用 setter 注入供测试替换
+- 消除方式：已处理——setter 加 `synchronized`（与读端锁一致）
+- 来源：质量关卡垂直切片 SpotBugs（2026-08-30）
+
+## 2026-08-30 kb-svc 与 common-lib 测试覆盖欠债，② 覆盖率底线无法立即落地
+
+- 位置：`kb-svc`（A 级，test 仅 `KbSvcApplicationTests` context-load）；`common-lib`（C 级，无 test 目录，5 个 http 类）
+- 现状：`kb-svc` 的 `domain/eval`、`domain/kb`、`application/service` 零单测；`common-lib` 的 `PageRequest`/`SearchRequest`/`FilterOperator` 等零测试
+- 影响：② 覆盖率底线（kb-svc 核心包 0.85/0.75、common-lib 0.80）当前无法设 verification——设了立即 0% 覆盖红；已全局接 jacoco 插件做观测，但 verification 阈值待补测试后启用
+- 起因：模块在建阶段侧重骨架与集成，未同步补领域/应用层单测
+- 消除方式：补 kb-svc 的 domain/application 单测与 common-lib http 类单测，达标后接 `jacocoTestCoverageVerification` 阈值
+- 来源：质量关卡横向复制（2026-08-30）
+
+## 2026-08-30 SpotBugs EI/EI2 豁免（DTO/record 数据传输意图）
+
+- 位置：`config/spotbugs/exclude.xml` 的 DTO 命名正则（`~.*(Request|Response|Command|Query|Summary|Report|Thread|Config)$`）+ 3 个特例（`RecursiveCharacterTextSplitter$Builder`、`ToolCallObservingAdvisor`、`AgentService`）
+- 现状：DTO/record 返回可变 `List` 是传输意图，非内部表示泄漏；Spring 框架对象（`MeterRegistry`/`ObservationRegistry`）注入被 EI2 误报
+- 影响：业务聚合根（`Order` 等）已用 unmodifiable/defensive copy 防护，不在豁免范围；豁免按命名模式精确收窄，非全局关闭检测类目
+- 起因：Lombok record + `List` 字段在 DTO/配置边界的标准模式
+- 消除方式：WAIVER——保留精确豁免；新增的非 DTO 类 EI 报错仍会被正常检测
+- 来源：质量关卡横向复制 review（2026-08-30）
+
+## 2026-08-30 SpotBugs FS 豁免（LLM prompt 模板 \n）
+
+- 位置：`config/spotbugs/exclude.xml` 的 `EvaluationService`
+- 现状：`ANSWER_PROMPT_TEMPLATE` 的 `\n` 是传给 LLM 的文本，不是控制台/文件输出换行
+- 影响：改用 `%n` 会破坏 prompt 语义（引入平台相关换行）
+- 起因：LLM prompt 模板用 `\n` 作为数据内容
+- 消除方式：WAIVER——保留精确豁免（仅 `EvaluationService` 的 FS）
+- 来源：质量关卡横向复制 review（2026-08-30）
