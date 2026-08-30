@@ -8,6 +8,8 @@ import org.acm.ca.application.port.out.OrderQueryClient;
 import org.acm.ca.application.port.out.OrderQueryContractException;
 import org.acm.ca.application.port.out.OrderQueryUnavailableException;
 import org.acm.ca.application.port.out.TransientOrderQueryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,8 @@ import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class OrderQueryClientImpl implements OrderQueryClient {
+
+  private static final Logger log = LoggerFactory.getLogger(OrderQueryClientImpl.class);
 
   static final int RECENT_ORDER_PAGE = 1;
   static final int RECENT_ORDER_SIZE = 20;
@@ -39,6 +43,7 @@ public class OrderQueryClientImpl implements OrderQueryClient {
       timeout = 8000)
   @Override
   public List<OrderSummary> getRecentOrders(String customerId) {
+    long start = System.nanoTime();
     try {
       OrderPageResponse response =
           orderServiceHttpClient.search(
@@ -54,16 +59,23 @@ public class OrderQueryClientImpl implements OrderQueryClient {
       if (response.items() == null) {
         throw new OrderQueryContractException("Order query response items must not be null");
       }
-      return response.items().stream()
-          .map(
-              item ->
-                  new OrderSummary(
-                      item.orderNo(),
-                      item.status(),
-                      item.payableTotal(),
-                      item.currency(),
-                      item.createdAt()))
-          .toList();
+      List<OrderSummary> orders =
+          response.items().stream()
+              .map(
+                  item ->
+                      new OrderSummary(
+                          item.orderNo(),
+                          item.status(),
+                          item.payableTotal(),
+                          item.currency(),
+                          item.createdAt()))
+              .toList();
+      log.info(
+          "http.out service=order-svc op=recent-orders customerId={} orders={} durationMs={}",
+          customerId,
+          orders.size(),
+          (System.nanoTime() - start) / 1_000_000);
+      return orders;
     } catch (OrderQueryUnavailableException e) {
       throw e;
     } catch (NoFallbackAvailableException e) {

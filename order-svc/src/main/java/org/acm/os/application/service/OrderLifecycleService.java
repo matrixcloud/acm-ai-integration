@@ -3,6 +3,7 @@ package org.acm.os.application.service;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.os.application.exception.PersistedRetryableFailureException;
 import org.acm.os.application.exception.RetryableOperationException;
 import org.acm.os.application.port.in.PaymentUseCase;
@@ -26,6 +27,7 @@ import org.acm.os.domain.shipment.ShipmentItem;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, ShipmentUseCase {
@@ -76,7 +78,13 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
           inventoryClient.confirm(
               order.getInventoryReservationId(), "payment-confirm:" + externalPaymentNo);
           order.markPaid(payment, externalPaymentNo);
-          return initializeDetails(orderRepository.saveAndFlush(order));
+          Order saved = initializeDetails(orderRepository.saveAndFlush(order));
+          log.info(
+              "payment.succeeded paymentNo={} orderNo={} externalPaymentNo={}",
+              paymentNo,
+              saved.getOrderNo(),
+              externalPaymentNo);
+          return saved;
         });
   }
 
@@ -87,7 +95,9 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
         () -> {
           Order order = orderByPayment(paymentNo);
           order.markPaymentFailed(order.payment(paymentNo));
-          return initializeDetails(orderRepository.saveAndFlush(order));
+          Order saved = initializeDetails(orderRepository.saveAndFlush(order));
+          log.info("payment.failed paymentNo={} orderNo={}", paymentNo, saved.getOrderNo());
+          return saved;
         });
   }
 
@@ -105,14 +115,18 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
             inventoryClient.release(
                 order.getInventoryReservationId(), "cancel-pending:" + order.getOrderNo());
             order.cancelPending();
-            return initializeDetails(orderRepository.saveAndFlush(order));
+            Order saved = initializeDetails(orderRepository.saveAndFlush(order));
+            log.info("order.cancelled orderNo={} reason={}", saved.getOrderNo(), reason);
+            return saved;
           }
           String refundNo =
               BusinessNumberGenerator.deterministic(
                   "REF", "cancel:" + order.getOrderNo() + ":" + idempotencyKey);
           Refund refund = order.startCancel(reason, refundNo);
           executeRefund(order, refund);
-          return initializeDetails(orderRepository.saveAndFlush(order));
+          Order saved = initializeDetails(orderRepository.saveAndFlush(order));
+          log.info("order.cancelled orderNo={} reason={}", saved.getOrderNo(), reason);
+          return saved;
         });
   }
 
@@ -165,6 +179,8 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
           Refund refund = order.refund(refundNo);
           order.rejectRefund(refund, reviewer, comment);
           orderRepository.saveAndFlush(order);
+          log.info(
+              "refund.rejected refundNo={} orderNo={}", refund.getRefundNo(), order.getOrderNo());
           return refund;
         });
   }
@@ -216,6 +232,12 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
               Shipment.create(shipmentNo, carrierCode, external.trackingNo(), domainItems);
           order.allocateShipment(shipment);
           orderRepository.saveAndFlush(order);
+          log.info(
+              "shipment.created shipmentNo={} orderNo={} trackingNo={} carrierCode={}",
+              shipmentNo,
+              order.getOrderNo(),
+              external.trackingNo(),
+              carrierCode);
           return shipment;
         });
   }
@@ -236,7 +258,10 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
                 shipment.getTrackingNo(), "confirm-receipt:" + shipment.getShipmentNo());
           }
           order.confirmShipmentDelivered(shipmentNo);
-          return initializeDetails(orderRepository.saveAndFlush(order));
+          Order saved = initializeDetails(orderRepository.saveAndFlush(order));
+          log.info(
+              "order.receipt.confirmed orderNo={} shipmentNo={}", saved.getOrderNo(), shipmentNo);
+          return saved;
         });
   }
 
@@ -264,9 +289,15 @@ public class OrderLifecycleService implements PaymentUseCase, RefundUseCase, Shi
         refund.markInventoryRestored();
       }
       order.completeRefund(refund);
+      log.info("refund.completed refundNo={} orderNo={}", refund.getRefundNo(), order.getOrderNo());
     } catch (RuntimeException exception) {
       order.failRefund(refund);
       orderRepository.saveAndFlush(order);
+      log.warn(
+          "refund.execution.failed refundNo={} orderNo={} retryable=true",
+          refund.getRefundNo(),
+          order.getOrderNo(),
+          exception);
       throw new PersistedRetryableFailureException(exception);
     }
   }

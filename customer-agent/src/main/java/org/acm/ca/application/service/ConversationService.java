@@ -2,6 +2,7 @@ package org.acm.ca.application.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.application.port.in.ConversationStream;
 import org.acm.ca.application.port.in.ConversationUseCase;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConversationService implements ConversationUseCase {
@@ -50,7 +52,12 @@ public class ConversationService implements ConversationUseCase {
 
   private Conversation createInternal(CreateConversationCommand command) {
     Conversation conversation = Conversation.create(command.getCustomerId());
-    return conversationRepository.saveAndFlush(conversation);
+    Conversation saved = conversationRepository.saveAndFlush(conversation);
+    log.info(
+        "conversation.created conversationNo={} customerId={}",
+        saved.getConversationNo(),
+        command.getCustomerId());
+    return saved;
   }
 
   @Override
@@ -107,6 +114,10 @@ public class ConversationService implements ConversationUseCase {
     }
     conversation.addAgentReply(agentStream.fullContent());
     conversationRepository.saveAndFlush(conversation);
+    log.info(
+        "conversation.reply.saved conversationNo={} replyChars={}",
+        conversation.getConversationNo(),
+        agentStream.fullContent().length());
     return new MessageThread(
         conversation.getConversationNo(), List.copyOf(conversation.getMessages()));
   }
@@ -122,7 +133,9 @@ public class ConversationService implements ConversationUseCase {
   private Conversation endInternal(String conversationNo) {
     Conversation conversation = loadConversation(conversationNo);
     conversation.end();
-    return conversationRepository.saveAndFlush(conversation);
+    Conversation saved = conversationRepository.saveAndFlush(conversation);
+    log.info("conversation.ended conversationNo={}", conversationNo);
+    return saved;
   }
 
   @Override
@@ -136,7 +149,12 @@ public class ConversationService implements ConversationUseCase {
   private Conversation feedbackInternal(SubmitFeedbackCommand command) {
     Conversation conversation = loadConversation(command.getConversationNo());
     conversation.submitFeedback(command.getRating(), command.getComment());
-    return conversationRepository.saveAndFlush(conversation);
+    Conversation saved = conversationRepository.saveAndFlush(conversation);
+    log.info(
+        "conversation.feedback.submitted conversationNo={} rating={}",
+        command.getConversationNo(),
+        command.getRating());
+    return saved;
   }
 
   @Override

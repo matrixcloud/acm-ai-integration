@@ -97,16 +97,23 @@ public class OrderService implements OrderUseCase {
     try {
       // saveAndFlush so persistence failures surface inside this method, where the
       // reservation can still be compensated.
-      return orderRepository.saveAndFlush(order);
+      Order saved = orderRepository.saveAndFlush(order);
+      log.info(
+          "order.created orderNo={} customerId={} amount={} currency={}",
+          saved.getOrderNo(),
+          saved.getCustomerId(),
+          saved.getPayableTotal(),
+          saved.getCurrency());
+      return saved;
     } catch (RuntimeException e) {
       try {
         inventoryClient.release(reservationId, idempotencyKey);
       } catch (RuntimeException releaseFailure) {
         // Never mask the original persistence failure with a compensation failure.
         log.error(
-            "Failed to release inventory reservation '{}' for order {}",
-            reservationId,
+            "inventory.release.failed orderNo={} reservationId={}",
             orderNo,
+            reservationId,
             releaseFailure);
         e.addSuppressed(releaseFailure);
       }

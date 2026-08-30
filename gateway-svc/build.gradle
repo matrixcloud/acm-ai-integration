@@ -8,6 +8,7 @@ description = 'gateway-svc'
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
+	implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation('org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j') {
 		exclude group: 'io.github.resilience4j', module: 'resilience4j-spring-boot3'

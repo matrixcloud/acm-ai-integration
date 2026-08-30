@@ -3,6 +3,7 @@ package org.acm.ca.application.service;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.format.DateTimeFormatter;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.application.port.in.GenerateReplyCommand;
 import org.acm.ca.application.port.in.ReplyStream;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
  * transport-neutral {@link ReplyStream}; the {@code Flux} never leaks to the caller.
  */
 @Service
+@Slf4j
 public class AgentService implements AgentUseCase {
 
   private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
@@ -81,12 +83,29 @@ public class AgentService implements AgentUseCase {
           .doOnComplete(
               () -> {
                 if (fullReply.toString().isBlank()) {
+                  log.warn(
+                      "agent.reply.empty conversationNo={} path={}",
+                      command.conversationNo(),
+                      rule.isPresent() ? "fast" : "react");
                   stream.emitError("LLM_UNAVAILABLE", "LLM returned empty content");
                 } else {
+                  log.info(
+                      "agent.reply.ok conversationNo={} path={} replyChars={}",
+                      command.conversationNo(),
+                      rule.isPresent() ? "fast" : "react",
+                      fullReply.length());
                   stream.emitDone(fullReply.toString().strip());
                 }
               })
-          .doOnError(e -> stream.emitError("LLM_UNAVAILABLE", e.getMessage()))
+          .doOnError(
+              e -> {
+                log.error(
+                    "agent.reply.failed conversationNo={} path={}",
+                    command.conversationNo(),
+                    rule.isPresent() ? "fast" : "react",
+                    e);
+                stream.emitError("LLM_UNAVAILABLE", e.getMessage());
+              })
           .blockLast();
 
       observation.stop();

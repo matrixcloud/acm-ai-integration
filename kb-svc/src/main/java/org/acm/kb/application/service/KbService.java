@@ -61,7 +61,9 @@ public class KbService implements KbUseCase {
   @Transactional
   public KnowledgeBase createKnowledgeBase(String name) {
     KnowledgeBase kb = KnowledgeBase.create(name);
-    return knowledgeBaseRepository.save(kb);
+    KnowledgeBase saved = knowledgeBaseRepository.save(kb);
+    log.info("kb.created kbNo={} name={}", saved.getKbNo(), name);
+    return saved;
   }
 
   @Override
@@ -123,9 +125,15 @@ public class KbService implements KbUseCase {
             kb.incrementDocCount();
             knowledgeBaseRepository.save(kb);
           });
+      log.info(
+          "document.ingested documentNo={} kbNo={} chunks={}",
+          doc.getDocumentNo(),
+          kb.getKbNo(),
+          savedChunks.size());
       return doc;
     } catch (RuntimeException e) {
-      log.error("Failed to process document {}", doc.getDocumentNo(), e);
+      log.error(
+          "document.process.failed documentNo={} kbNo={}", doc.getDocumentNo(), kb.getKbNo(), e);
       try {
         vectorStore.delete(
             new org.springframework.ai.vectorstore.filter.Filter.Expression(
@@ -133,7 +141,7 @@ public class KbService implements KbUseCase {
                 new org.springframework.ai.vectorstore.filter.Filter.Key("document_no"),
                 new org.springframework.ai.vectorstore.filter.Filter.Value(doc.getDocumentNo())));
       } catch (RuntimeException cleanupEx) {
-        log.warn("Failed to cleanup vectors for document {}", doc.getDocumentNo(), cleanupEx);
+        log.warn("document.vector.cleanup.failed documentNo={}", doc.getDocumentNo(), cleanupEx);
       }
       doc.markFailed();
       documentRepository.save(doc);
@@ -169,6 +177,7 @@ public class KbService implements KbUseCase {
     documentChunkRepository.deleteByDocumentId(doc.getId());
     documentRepository.delete(doc);
     kb.decrementDocCount();
+    log.info("document.deleted documentNo={} kbNo={}", docNo, kbNo);
   }
 
   @Override
@@ -205,7 +214,9 @@ public class KbService implements KbUseCase {
             .topK(command.topK())
             .filterExpression(kbFilter)
             .build();
+    long start = System.nanoTime();
     List<org.springframework.ai.document.Document> results = vectorStore.similaritySearch(request);
+    long durationMs = (System.nanoTime() - start) / 1_000_000;
     List<KbChunk> chunks = new ArrayList<>();
     for (org.springframework.ai.document.Document result : results) {
       Map<String, Object> metadata = result.getMetadata();
@@ -214,6 +225,12 @@ public class KbService implements KbUseCase {
       double score = result.getScore() != null ? result.getScore() : 0.0;
       chunks.add(new KbChunk(result.getText(), score, documentNo, documentName));
     }
+    log.info(
+        "kb.search kbNo={} topK={} results={} durationMs={}",
+        command.kbNo(),
+        command.topK(),
+        chunks.size(),
+        durationMs);
     return chunks;
   }
 

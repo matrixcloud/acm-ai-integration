@@ -1,18 +1,14 @@
-package org.acm.os.interfaces.http;
+package org.acm.kb.interfaces.http;
 
-import lombok.RequiredArgsConstructor;
 import org.acm.common.logging.HttpRequestLoggingFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
-  private final ApiVersionInterceptor apiVersionInterceptor;
 
   @Bean
   FilterRegistrationBean<HttpRequestLoggingFilter> requestLoggingFilter() {
@@ -20,12 +16,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
         new FilterRegistrationBean<>(new HttpRequestLoggingFilter());
     registration.setOrder(Ordered.LOWEST_PRECEDENCE);
     return registration;
-  }
-
-  @Override
-  public void addInterceptors(InterceptorRegistry registry) {
-    registry
-        .addInterceptor(apiVersionInterceptor)
-        .addPathPatterns("/orders/**", "/admin/**", "/mock/**");
   }
 }

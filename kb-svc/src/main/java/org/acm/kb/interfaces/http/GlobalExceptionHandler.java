@@ -1,9 +1,11 @@
 package org.acm.kb.interfaces.http;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.kb.domain.shared.BusinessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -20,8 +22,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * centralized here. Any code without an explicit mapping fails loudly instead of degrading to a
  * generic status, so adding a new code without registering it can never silently mislead clients.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(Exception.class)
+  public void handleUnexpected(Exception exception, HttpServletRequest request) throws Exception {
+    log.error(
+        "http.error method={} path={}", request.getMethod(), request.getRequestURI(), exception);
+    throw exception;
+  }
 
   /**
    * Handles request body validation failures.

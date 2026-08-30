@@ -5,6 +5,8 @@ import java.util.List;
 import org.acm.ca.application.port.out.KbSearchClient;
 import org.acm.ca.application.port.out.KbSearchUnavailableException;
 import org.acm.ca.application.port.out.TransientKbSearchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,8 @@ import org.springframework.web.client.ResourceAccessException;
  */
 @Component
 public class KbSearchClientImpl implements KbSearchClient {
+
+  private static final Logger log = LoggerFactory.getLogger(KbSearchClientImpl.class);
 
   static final String API_VERSION = "1";
 
@@ -38,6 +42,7 @@ public class KbSearchClientImpl implements KbSearchClient {
       timeout = 8000)
   @Override
   public List<KbChunk> search(SearchRequest request) {
+    long start = System.nanoTime();
     try {
       KbSearchResponse response =
           kbServiceHttpClient.search(
@@ -48,9 +53,17 @@ public class KbSearchClientImpl implements KbSearchClient {
       if (response.chunks() == null) {
         throw new KbSearchUnavailableException("KB search response chunks must not be null");
       }
-      return response.chunks().stream()
-          .map(c -> new KbChunk(c.content(), c.score(), c.documentNo(), c.documentName()))
-          .toList();
+      List<KbChunk> chunks =
+          response.chunks().stream()
+              .map(c -> new KbChunk(c.content(), c.score(), c.documentNo(), c.documentName()))
+              .toList();
+      log.info(
+          "http.out service=kb-svc op=search kbNo={} topK={} chunks={} durationMs={}",
+          request.kbNo(),
+          request.topK(),
+          chunks.size(),
+          (System.nanoTime() - start) / 1_000_000);
+      return chunks;
     } catch (KbSearchUnavailableException e) {
       throw e;
     } catch (NoFallbackAvailableException e) {

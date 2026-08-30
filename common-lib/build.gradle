@@ -1,13 +1,21 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 group = 'org.acm'
 version = '0.0.1-SNAPSHOT'
 
 dependencies {
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+    implementation 'org.slf4j:slf4j-api:2.0.18'
+
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+    testImplementation 'org.springframework:spring-web:7.0.9'
+    testImplementation 'org.springframework:spring-test:7.0.9'
+    testImplementation 'ch.qos.logback:logback-classic:1.5.38'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {

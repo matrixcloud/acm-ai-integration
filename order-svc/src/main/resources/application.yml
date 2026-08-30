@@ -27,9 +27,6 @@ management:
     sampling:
       probability: 1.0
 
-logging:
-  pattern:
-    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
 order:
   adapters:

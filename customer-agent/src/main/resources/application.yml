@@ -38,9 +38,6 @@ management:
       exposure:
         include: health,prometheus
 
-logging:
-  pattern:
-    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
 customer:
   adapters:

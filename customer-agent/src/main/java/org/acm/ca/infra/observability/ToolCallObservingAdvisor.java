@@ -67,7 +67,7 @@ public class ToolCallObservingAdvisor implements CallAdvisor, StreamAdvisor {
                     .counter("agent.tool.calls", "name", toolCall.name(), "status", "requested")
                     .increment();
                 logger.info(
-                    "tool call requested: name={} args={}", toolCall.name(), toolCall.arguments());
+                    "agent.tool.call name={} args={}", toolCall.name(), toolCall.arguments());
               });
     } else {
       meterRegistry.counter("agent.react.iterations", "outcome", "final").increment();

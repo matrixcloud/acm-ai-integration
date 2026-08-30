@@ -4,6 +4,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# runtime logs (logback-spring.xml JSON rotation output)
+logs/
+
 ### IntelliJ IDEA ###
 .idea/
 *.iws

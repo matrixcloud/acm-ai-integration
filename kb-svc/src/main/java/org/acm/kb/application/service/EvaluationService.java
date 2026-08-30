@@ -94,6 +94,13 @@ public class EvaluationService implements EvaluationUseCase {
     }
     EvaluationRun run = EvaluationRun.create(kbNo, suite.getId(), topK);
     runRepository.save(run);
+    log.info(
+        "eval.run.started runNo={} kbNo={} suiteNo={} cases={} topK={}",
+        run.getRunNo(),
+        kbNo,
+        suiteNo,
+        cases.size(),
+        topK);
     List<EvaluationRunDetail> details = new ArrayList<>();
     try {
       for (EvaluationCase caseEntity : cases) {
@@ -104,9 +111,10 @@ public class EvaluationService implements EvaluationUseCase {
       EvaluationMetrics metrics = aggregate(details);
       run.markCompleted(metrics);
       runRepository.save(run);
+      log.info("eval.run.completed runNo={} cases={}", run.getRunNo(), details.size());
       return run;
     } catch (RuntimeException e) {
-      log.error("Evaluation run {} failed", run.getRunNo(), e);
+      log.error("eval.run.failed runNo={}", run.getRunNo(), e);
       run.markFailed();
       runRepository.save(run);
       throw e;

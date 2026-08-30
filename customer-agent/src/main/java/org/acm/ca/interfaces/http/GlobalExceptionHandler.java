@@ -1,9 +1,11 @@
 package org.acm.ca.interfaces.http;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.ca.domain.shared.BusinessException;
 import org.acm.ca.interfaces.http.exception.UnsupportedApiVersionException;
 import org.springframework.http.HttpStatus;
@@ -19,8 +21,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Maps business and transport exceptions to Problem Details (RFC 9457). Any business code without
  * an explicit HTTP mapping fails loudly so an unregistered code can never silently mislead clients.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(Exception.class)
+  public void handleUnexpected(Exception exception, HttpServletRequest request) throws Exception {
+    log.error(
+        "http.error method={} path={}", request.getMethod(), request.getRequestURI(), exception);
+    throw exception;
+  }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException exception) {
