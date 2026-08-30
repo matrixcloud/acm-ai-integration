@@ -2,23 +2,130 @@ spring:
   application:
     name: gateway-svc
   cloud:
+    circuitbreaker:
+      resilience4j:
+        disable-time-limiter: true
     gateway:
       server:
         webflux:
           routes:
-            - id: customer-agent
+            # SSE 流式：不重试、不熔断；断路器包裹整条流且无法只保护连接建立，
+            # 客户端中途断开会被记为熔断失败污染统计，连接建立失败由 LB 连接超时快速失败
+            - id: customer-agent-sse
+              uri: lb://customer-agent
+              predicates:
+                - Path=/api/agent/conversations/*/messages,/api/agent/reply
+                - Method=POST
+              filters:
+                - StripPrefix=2
+            # 直接 GET 查询：最多额外重试 1 次，仅瞬时状态码；
+            # series 显式置空关闭默认的“所有 5xx 都重试”，500 视为下游缺陷不重试
+            - id: customer-agent-get
+              uri: lb://customer-agent
+              predicates:
+                - Path=/api/customer/**,/api/agent/**
+                - Method=GET
+              filters:
+                - StripPrefix=2
+                - name: Retry
+                  args:
+                    retries: 1
+                    methods: GET
+                    series: ''
+                    statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
+                    backoff:
+                      firstBackoff: 100ms
+                      factor: 2
+                      maxBackoff: 500ms
+                - name: CircuitBreaker
+                  args:
+                    name: customer-agent
+            # 写请求：绝不自动重试，由熔断保护
+            - id: customer-agent-write
+              uri: lb://customer-agent
+              predicates:
+                - Path=/api/customer/**,/api/agent/**
+                - Method=POST
+              filters:
+                - StripPrefix=2
+                - name: CircuitBreaker
+                  args:
+                    name: customer-agent
+            - id: order-svc-get
+              uri: lb://order-svc
+              predicates:
+                - Path=/api/order/**
+                - Method=GET
+              filters:
+                - StripPrefix=2
+                - name: Retry
+                  args:
+                    retries: 1
+                    methods: GET
+                    series: ''
+                    statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
+                    backoff:
+                      firstBackoff: 100ms
+                      factor: 2
+                      maxBackoff: 500ms
+                - name: CircuitBreaker
+                  args:
+                    name: order-svc
+            - id: order-svc-write
+              uri: lb://order-svc
+              predicates:
+                - Path=/api/order/**
+                - Method=POST
+              filters:
+                - StripPrefix=2
+                - name: CircuitBreaker
+                  args:
+                    name: order-svc
+            - id: kb-svc-get
+              uri: lb://kb-svc
+              predicates:
+                - Path=/api/kb/**
+                - Method=GET
+              filters:
+                - StripPrefix=2
+                - name: Retry
+                  args:
+                    retries: 1
+                    methods: GET
+                    series: ''
+                    statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE,GATEWAY_TIMEOUT
+                    backoff:
+                      firstBackoff: 100ms
+                      factor: 2
+                      maxBackoff: 500ms
+                - name: CircuitBreaker
+                  args:
+                    name: kb-svc
+            # kb-svc 的 POST search 语义只读，重试由 customer-agent 服务客户端负责
+            - id: kb-svc-write
+              uri: lb://kb-svc
+              predicates:
+                - Path=/api/kb/**
+                - Method=POST
+              filters:
+                - StripPrefix=2
+                - name: CircuitBreaker
+                  args:
+                    name: kb-svc
+            # 其余方法（PUT/DELETE/PATCH 等管理类端点）：不重试不熔断，保持透传
+            - id: customer-agent-other
               uri: lb://customer-agent
               predicates:
                 - Path=/api/customer/**,/api/agent/**
               filters:
                 - StripPrefix=2
-            - id: order-svc
+            - id: order-svc-other
               uri: lb://order-svc
               predicates:
                 - Path=/api/order/**
               filters:
                 - StripPrefix=2
-            - id: kb-svc
+            - id: kb-svc-other
               uri: lb://kb-svc
               predicates:
                 - Path=/api/kb/**
