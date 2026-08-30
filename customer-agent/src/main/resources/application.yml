@@ -14,7 +14,7 @@ spring:
   ai:
     openai:
       api-key: ${DASHSCOPE_API_KEY}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      base-url: https://llm-e9ka6krk9oaxv2lp.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
       chat:
         model: qwen3.8-flash
         temperature: 0.7
