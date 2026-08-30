@@ -9,6 +9,7 @@ description = 'customer-agent'
 
 dependencies {
 	implementation project(':common-lib')
+	implementation 'org.springframework.boot:spring-boot-http-client'
 	implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
 	implementation 'org.springframework.boot:spring-boot-restclient'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'

@@ -15,22 +15,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.application.port.in.ConversationStream;
 import org.acm.ca.application.port.in.ConversationUseCase.MessageThread;
 import org.acm.ca.application.port.in.ConversationUseCase.QuickQuestionItem;
+import org.acm.ca.application.port.in.GenerateReplyCommand;
 import org.acm.ca.application.port.in.ReplyStream;
 import org.acm.ca.application.port.in.command.CreateConversationCommand;
 import org.acm.ca.application.port.in.command.SendMessageCommand;
 import org.acm.ca.application.port.in.command.SubmitFeedbackCommand;
 import org.acm.ca.application.port.in.query.SearchConversationQuery;
-import org.acm.ca.application.port.out.AiAgentClient;
-import org.acm.ca.application.port.out.AiAgentClient.ReplyRequest;
 import org.acm.ca.application.port.out.AiAgentUnavailableException;
 import org.acm.ca.application.port.out.OrderQueryClient;
+import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
 import org.acm.ca.domain.conversation.Conversation;
 import org.acm.ca.domain.conversation.ConversationNotActiveException;
 import org.acm.ca.domain.conversation.ConversationNotFoundException;
@@ -57,7 +60,7 @@ class ConversationServiceTest {
 
   @Mock private ConversationRepository conversationRepository;
   @Mock private QuickQuestionRepository quickQuestionRepository;
-  @Mock private AiAgentClient aiAgentClient;
+  @Mock private AgentUseCase agentUseCase;
   @Mock private OrderQueryClient orderQueryClient;
   @Mock private IdempotencyService idempotencyService;
 
@@ -72,7 +75,7 @@ class ConversationServiceTest {
         new ConversationService(
             conversationRepository,
             quickQuestionRepository,
-            aiAgentClient,
+            agentUseCase,
             orderQueryClient,
             idempotencyService);
     lenient()
@@ -116,13 +119,21 @@ class ConversationServiceTest {
     when(conversationRepository.findByConversationNo(conversationNo))
         .thenReturn(Optional.of(conversation));
     when(conversationRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
-    when(orderQueryClient.getRecentOrders("customer-1")).thenReturn(List.of());
+    when(orderQueryClient.getRecentOrders("customer-1"))
+        .thenReturn(
+            List.of(
+                new OrderSummary(
+                    "ORD-1",
+                    "PAID",
+                    new BigDecimal("498.00"),
+                    "CNY",
+                    LocalDateTime.of(2026, 8, 28, 10, 30))));
     doAnswer(
             invocation -> {
               ((ReplyStream) invocation.getArgument(1)).emitDone("Hi there!");
               return null;
             })
-        .when(aiAgentClient)
+        .when(agentUseCase)
         .streamReply(any(), any());
     @SuppressWarnings("unchecked")
     ArgumentCaptor<IdempotencyService.IdempotentOperation<MessageThread>> operationCaptor =
@@ -138,15 +149,19 @@ class ConversationServiceTest {
     assertThat(operation.request()).isSameAs(command);
     assertThat(operation.responseType()).isEqualTo(MessageThread.class);
 
-    ArgumentCaptor<ReplyRequest> replyCaptor = ArgumentCaptor.forClass(ReplyRequest.class);
-    verify(aiAgentClient).streamReply(replyCaptor.capture(), any());
-    ReplyRequest request = replyCaptor.getValue();
+    ArgumentCaptor<GenerateReplyCommand> replyCaptor =
+        ArgumentCaptor.forClass(GenerateReplyCommand.class);
+    verify(agentUseCase).streamReply(replyCaptor.capture(), any());
+    GenerateReplyCommand request = replyCaptor.getValue();
     assertThat(request.conversationNo()).isEqualTo(conversationNo);
     assertThat(request.customerId()).isEqualTo("customer-1");
-    assertThat(request.recentOrders()).isEmpty();
+    assertThat(request.recentOrders()).hasSize(1);
+    assertThat(request.recentOrders().get(0).orderNo()).isEqualTo("ORD-1");
+    assertThat(request.recentOrders().get(0).status()).isEqualTo("PAID");
+    assertThat(request.recentOrders().get(0).payableTotal()).isEqualByComparingTo("498.00");
     assertThat(request.customerMessage()).isEqualTo("Hello");
     assertThat(request.recentMessages()).hasSize(1);
-    assertThat(request.recentMessages().get(0).role()).isEqualTo(MessageRole.CUSTOMER);
+    assertThat(request.recentMessages().get(0).role()).isEqualTo("CUSTOMER");
     assertThat(request.recentMessages().get(0).content()).isEqualTo("Hello");
 
     assertThat(stream.done).isNotNull();
@@ -179,7 +194,7 @@ class ConversationServiceTest {
               agentStream.emitDone("Hi there!");
               return null;
             })
-        .when(aiAgentClient)
+        .when(agentUseCase)
         .streamReply(any(), any());
 
     RecordingConversationStream stream = new RecordingConversationStream();
@@ -210,13 +225,14 @@ class ConversationServiceTest {
               ((ReplyStream) invocation.getArgument(1)).emitDone("reply");
               return null;
             })
-        .when(aiAgentClient)
+        .when(agentUseCase)
         .streamReply(any(), any());
 
     service.streamMessage(command, "key-1", new RecordingConversationStream());
 
-    ArgumentCaptor<ReplyRequest> replyCaptor = ArgumentCaptor.forClass(ReplyRequest.class);
-    verify(aiAgentClient).streamReply(replyCaptor.capture(), any());
+    ArgumentCaptor<GenerateReplyCommand> replyCaptor =
+        ArgumentCaptor.forClass(GenerateReplyCommand.class);
+    verify(agentUseCase).streamReply(replyCaptor.capture(), any());
     assertThat(replyCaptor.getValue().recentMessages()).hasSize(20);
   }
 
@@ -238,7 +254,7 @@ class ConversationServiceTest {
         .isInstanceOf(ConversationNotActiveException.class);
 
     verify(conversationRepository, never()).saveAndFlush(any());
-    verifyNoInteractions(aiAgentClient, orderQueryClient);
+    verifyNoInteractions(agentUseCase, orderQueryClient);
   }
 
   @Test
@@ -253,7 +269,7 @@ class ConversationServiceTest {
     when(conversationRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
     when(orderQueryClient.getRecentOrders("customer-1")).thenReturn(List.of());
     doThrow(new AiAgentUnavailableException("agent down"))
-        .when(aiAgentClient)
+        .when(agentUseCase)
         .streamReply(any(), any());
 
     assertThatThrownBy(
@@ -267,7 +283,7 @@ class ConversationServiceTest {
     // be flushed. The outer transaction (real IdempotencyService) rolls both back.
     verify(conversationRepository, times(1)).saveAndFlush(any());
     verify(orderQueryClient).getRecentOrders("customer-1");
-    verify(aiAgentClient, times(1)).streamReply(any(), any());
+    verify(agentUseCase, times(1)).streamReply(any(), any());
   }
 
   @Test
@@ -287,7 +303,7 @@ class ConversationServiceTest {
                   .emitError("LLM_UNAVAILABLE", "LLM service timed out");
               return null;
             })
-        .when(aiAgentClient)
+        .when(agentUseCase)
         .streamReply(any(), any());
 
     AiAgentUnavailableException exception =
@@ -315,7 +331,7 @@ class ConversationServiceTest {
         .thenReturn(Optional.of(conversation));
     when(conversationRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
     when(orderQueryClient.getRecentOrders("customer-1")).thenReturn(List.of());
-    doAnswer(invocation -> null).when(aiAgentClient).streamReply(any(), any());
+    doAnswer(invocation -> null).when(agentUseCase).streamReply(any(), any());
 
     assertThatThrownBy(
             () ->

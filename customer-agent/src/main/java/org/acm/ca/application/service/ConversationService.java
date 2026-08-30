@@ -2,17 +2,16 @@ package org.acm.ca.application.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.application.port.in.ConversationStream;
 import org.acm.ca.application.port.in.ConversationUseCase;
+import org.acm.ca.application.port.in.GenerateReplyCommand;
 import org.acm.ca.application.port.in.ReplyStream;
 import org.acm.ca.application.port.in.command.CreateConversationCommand;
 import org.acm.ca.application.port.in.command.SendMessageCommand;
 import org.acm.ca.application.port.in.command.SubmitFeedbackCommand;
 import org.acm.ca.application.port.in.query.SearchConversationQuery;
-import org.acm.ca.application.port.out.AiAgentClient;
 import org.acm.ca.application.port.out.AiAgentUnavailableException;
-import org.acm.ca.application.port.out.AiAgentClient.MessageContext;
-import org.acm.ca.application.port.out.AiAgentClient.ReplyRequest;
 import org.acm.ca.application.port.out.OrderQueryClient;
 import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
 import org.acm.ca.domain.conversation.Conversation;
@@ -37,7 +36,7 @@ public class ConversationService implements ConversationUseCase {
 
   private final ConversationRepository conversationRepository;
   private final QuickQuestionRepository quickQuestionRepository;
-  private final AiAgentClient aiAgentClient;
+  private final AgentUseCase agentUseCase;
   private final OrderQueryClient orderQueryClient;
   private final IdempotencyService idempotencyService;
 
@@ -72,21 +71,35 @@ public class ConversationService implements ConversationUseCase {
     conversation.addCustomerMessage(command.getContent());
     conversationRepository.saveAndFlush(conversation);
 
-    List<MessageContext> recentMessages =
+    List<GenerateReplyCommand.MessageContext> recentMessages =
         conversation.getMessages().stream()
             .limit(20)
-            .map(m -> new MessageContext(m.getRole(), m.getContent(), m.getCreatedAt()))
+            .map(
+                m ->
+                    new GenerateReplyCommand.MessageContext(
+                        m.getRole().name(), m.getContent(), m.getCreatedAt()))
             .toList();
     List<OrderSummary> recentOrders = orderQueryClient.getRecentOrders(conversation.getCustomerId());
+    List<GenerateReplyCommand.OrderSummary> commandOrders =
+        recentOrders.stream()
+            .map(
+                order ->
+                    new GenerateReplyCommand.OrderSummary(
+                        order.orderNo(),
+                        order.status(),
+                        order.payableTotal(),
+                        order.currency(),
+                        order.createdAt()))
+            .toList();
 
-    ReplyRequest replyRequest =
-        new ReplyRequest(
+    GenerateReplyCommand replyCommand =
+        new GenerateReplyCommand(
             conversation.getConversationNo(),
             conversation.getCustomerId(),
             recentMessages,
-            recentOrders,
+            commandOrders,
             command.getContent());
-    aiAgentClient.streamReply(replyRequest, agentStream);
+    agentUseCase.streamReply(replyCommand, agentStream);
 
     if (agentStream.fullContent() == null || agentStream.fullContent().isBlank()) {
       throw new AiAgentUnavailableException("Agent reply stream completed without content");

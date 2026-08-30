@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,12 +11,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.acm.ca.application.port.in.AgentUseCase;
+import org.acm.ca.application.port.in.GenerateReplyCommand;
+import org.acm.ca.application.port.in.ReplyStream;
+import org.acm.ca.application.port.out.AiAgentUnavailableException;
+import org.acm.ca.application.port.out.OrderQueryClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,8 +38,7 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * End-to-end tests for the merged customer service API: full Spring context + PostgreSQL via
  * Testcontainers, exercising the streaming message endpoint (SSE), sync endpoints, Problem
- * Details, API versioning and idempotency. Mock adapters are active for deterministic replies
- * and failure injection.
+ * Details, API versioning and idempotency.
  */
 @Testcontainers
 @AutoConfigureMockMvc
@@ -39,8 +46,7 @@ import tools.jackson.databind.ObjectMapper;
     webEnvironment = SpringBootTest.WebEnvironment.MOCK,
     properties = {
       "eureka.client.enabled=false",
-      "spring.ai.openai.api-key=test-key",
-      "customer.adapters.ai-agent=mock"
+      "spring.ai.openai.api-key=test-key"
     })
 class CustomerApiIntegrationTest {
 
@@ -50,9 +56,11 @@ class CustomerApiIntegrationTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private TestAgentUseCase agentUseCase;
 
   @BeforeEach
   void cleanDatabase() {
+    agentUseCase.reset();
     jdbcTemplate.update("delete from messages");
     jdbcTemplate.update("delete from feedback");
     jdbcTemplate.update("delete from conversations");
@@ -267,7 +275,7 @@ class CustomerApiIntegrationTest {
   @Test
   void externalFailureEmitsErrorEventAndAllowsRetry() throws Exception {
     String conversationNo = createConversation("customer-001");
-    failCapability("ai-agent");
+    agentUseCase.failNext();
 
     SseResult failure = sendMessageSse(conversationNo, "retry-key", "我的订单到哪了？");
 
@@ -348,18 +356,6 @@ class CustomerApiIntegrationTest {
     return parseSse(raw);
   }
 
-  private void failCapability(String capability) throws Exception {
-    mockMvc
-        .perform(
-            put("/mock/failures/{capability}", capability)
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("API-Version", "1")
-                .content("""
-                    {"enabled": true}
-                    """))
-        .andExpect(status().isNoContent());
-  }
-
   private SseResult parseSse(String raw) {
     List<String> chunks = new ArrayList<>();
     String done = null;
@@ -406,4 +402,40 @@ class CustomerApiIntegrationTest {
   }
 
   private record SseResult(List<String> chunks, String done, String errorCode, String raw) {}
+
+  @TestConfiguration
+  static class TestClientsConfig {
+
+    @Bean
+    @Primary
+    TestAgentUseCase testAgentUseCase() {
+      return new TestAgentUseCase();
+    }
+
+    @Bean
+    @Primary
+    OrderQueryClient testOrderQueryClient() {
+      return customerId -> List.of();
+    }
+  }
+
+  static class TestAgentUseCase implements AgentUseCase {
+    private final AtomicBoolean failNext = new AtomicBoolean();
+
+    void reset() {
+      failNext.set(false);
+    }
+
+    void failNext() {
+      failNext.set(true);
+    }
+
+    @Override
+    public void streamReply(GenerateReplyCommand command, ReplyStream stream) {
+      if (failNext.getAndSet(false)) {
+        throw new AiAgentUnavailableException("agent down");
+      }
+      stream.emitDone("自动回复：" + command.customerMessage());
+    }
+  }
 }

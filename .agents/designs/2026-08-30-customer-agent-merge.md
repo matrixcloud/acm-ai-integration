@@ -6,23 +6,23 @@
 - 日期：2026-08-30
 - 状态：已确认（用户已批准合并方案 + 前端 SSE 流式改造）
 - 前置文档：`2026-08-29-customer-service.md`（已取代）、`2026-08-29-customer-agent.md`（已取代）
-- 目标：将 `customer-svc` 的全部业务能力（会话生命周期、消息、评价、快捷问题、幂等）迁入 `customer-agent`，删除独立业务服务；`AiAgentClient` 出站端口改为进程内真实 agent 适配；消息发送端点升级为 SSE 流式，前端同步改造
+- 目标：将 `customer-svc` 的全部业务能力（会话生命周期、消息、评价、快捷问题、幂等）迁入 `customer-agent`，删除独立业务服务；会话服务直接调用进程内 `AgentUseCase`；消息发送端点升级为 SSE 流式，前端同步改造
 - 技术基础：Spring Boot 4.1.1、Spring AI 2.0.x、Spring MVC（SseEmitter）、Spring Data JPA、Flyway、PostgreSQL、React + Vite（fetch 流式解析）
 
 ## 2. 已确认的业务与技术决策
 
 1. `customer-svc` 模块整体删除，功能迁入 `customer-agent`（包根 `org.acm.ca`，端口 8010，Eureka 注册名不变）。合并后它是「客服服务（业务 + AI Agent）」，架构分层图中业务层与 AI 应用层在该模块内合并。
 2. 对外业务契约保持兼容：网关继续暴露 `/api/customer/**`；合并后服务以同路径提供 `/conversations`、`/quick-questions`。`API-Version: 1`、`Idempotency-Key`、Problem Details 约定保留。唯一契约变更：`POST /conversations/{conversationNo}/messages` 从同步 JSON 改为 SSE 流式（决策 7）。
-3. `AiAgentClient` 出站端口保留，新增进程内适配器 `InProcessAiAgentClient` 调用 `AgentUseCase.streamReply`，替换原 Mock。`ConversationService` 依赖端口不变（单测继续 mock 端口）。
-4. 适配器按配置选择：`customer.adapters.ai-agent: real | mock`，默认 `real`。`MockAiAgentClient`（原 `AiAgentClientImpl`）与 `MockOrderQueryClient`（原 `OrderQueryClientImpl`）保留——集成测试失败注入与无 LLM key 演示依赖它们。mock 未激活时 `/mock/agent/*` 端点 fail-fast 返回 409 `MOCK_ADAPTER_INACTIVE`。
-5. 拆除 svc ↔ agent 调用环：删除 `CustomerSvcClient`、`HttpClientConfig`（`@ImportHttpServices`）、代理版 `QuickQuestionService`、resilience4j `customer-svc` 实例、`spring.http.serviceclient.*`、`spring-boot-http-client` 依赖。快捷问题由本地 `ConversationUseCase.listQuickQuestions()` 直供（Flyway 种子数据不变）。
+3. 删除 `AiAgentClient` 出站端口与 `InProcessAiAgentClient`。`ConversationService` 直接调用同进程 `AgentUseCase.streamReply`，只保留一次命令模型转换。
+4. 删除 `MockAiAgentClient`、`MockOrderQueryClient`、Mock 适配器选择代码及失败注入端点。`application.yml` 不在本次变更范围，遗留的 `customer.adapters.ai-agent` 键不再参与运行时选择。测试通过 `@Primary` 测试 Bean 隔离外部依赖。
+5. `OrderQueryClient` 使用 Spring HTTP Service Client 真实调用 `order-svc`。HTTP 分组名即 Eureka 服务名，Spring Cloud LoadBalancer 负责解析；连接与读取超时由 Java 配置显式设置，不修改 `application.yml`。
 6. 网关收敛为单路由：`Path=/api/customer/**,/api/agent/**` → `lb://customer-agent`（StripPrefix=2），删除 `customer-svc` 路由。agent 独立 SSE 端点从 `/api/agent/reply` 改为 `/agent/reply`，修正其经网关 404 的既有问题。
 7. 消息发送端点改为 SSE 流式：`POST /conversations/{conversationNo}/messages` 返回 `text/event-stream`。同步版本删除（前端是唯一消费者）。事件协议：`chunk`（原始 token 文本）、`done`（`MessageThreadResponse` JSON，最后一个事件，含持久化后的客户消息与 agent 回复）、`error`（`{code, detail}` JSON，最后一个事件）。
 8. SSE 错误分级：请求级错误（body 校验失败、缺 `Idempotency-Key`、`Accept` 不兼容）在流建立前返回 problem+json（400/406）；一旦流建立，所有业务与外部依赖错误一律以 `error` 事件 in-band 推送（含会话不存在/已结束、幂等冲突）。
 9. 流式幂等：`streamMessage` 复用 `IdempotencyService.execute` 的单事务骨架（预留 PENDING → 存客户消息 → LLM 流式（chunk 透传）→ 存 agent 回复 → complete 缓存 `MessageThread`），闭包捕获业务流回调；重放路径不执行 action，无 chunk。同 key 不同 body 或并发写 → `error` 事件 `IDEMPOTENCY_KEY_REUSED`。action 失败整体回滚（含 PENDING 行），同 key 可重试。
 10. `API-Version` 校验统一：`ApiVersionInterceptor` 覆盖 `/conversations/**`、`/quick-questions/**`、`/agent/**`（前端每请求均携带该头，无破坏）；`/mock/**` 不校验。
 11. 前端 `customer-app` 流式改造：发送消息改用 fetch + `ReadableStream` 手工解析 SSE（`EventSource` 不支持 POST），`chunk` 逐段追加到「正在输入」气泡，`done` 用权威 `MessageThread` 整体替换，`error` 展示错误并回滚乐观消息。会话创建/结束/评价/快捷问题拉取仍为同步 JSON。
-12. 不实现：前端流式之外的推送通道（WebSocket）、`OrderQueryClient` 真实 order-svc 适配器、租户隔离与鉴权。数据库名 `cs`、端口、既有表结构不变。
+12. 不实现：前端流式之外的推送通道（WebSocket）、租户隔离与鉴权。数据库名 `cs`、端口、既有表结构不变。
 
 ## 3. 目标与非目标
 
@@ -38,7 +38,7 @@
 
 - 不做多轮记忆迁移（仍由本服务持久化 + `recentMessages` 注入）、不做 Reflection/意图识别（沿用混合范式设计）。
 - 不改事务边界（单事务含 LLM 调用的连接占用问题记入 tech_debt，见 §13）。
-- 不做 order-svc 真实适配器与鉴权（沿用演示环境约束）。
+- 不做 order-svc 鉴权（沿用演示环境约束）。
 
 ## 4. 用例清单
 
@@ -57,7 +57,7 @@ Given 会话状态为 ACTIVE
 And 客户提交非空消息内容与未使用的幂等键
 When 客户发送消息（Accept: text/event-stream）
 Then 系统在事务内预留幂等记录并保存 CUSTOMER 消息
-And 系统获取近期订单上下文并调用 AiAgentClient 流式生成
+And 系统从 order-svc 获取近期订单上下文并调用 AgentUseCase 流式生成
 And 每个 LLM token 以 chunk 事件透传给前端
 And 流结束后系统保存 AGENT 回复、完成幂等记录并提交事务
 And 系统以 done 事件返回持久化后的 MessageThread（含消息 id/seqNo/createdAt）
@@ -151,7 +151,7 @@ Then 会话进入 ENDED；重复提交返回 409 FEEDBACK_ALREADY_SUBMITTED
 ### 5.2 输入/输出
 
 - 入站：REST 同步 JSON（创建/查询/结束/评价/快捷问题）+ SSE 流式（发消息、agent reply）。
-- 出站端口：`AiAgentClient`（进程内 → `AgentUseCase`；mock 备选）、`OrderQueryClient`（mock）、`KbSearchClient`（HTTP → kb-svc，ReAct 路径工具）。
+- 出站端口：`OrderQueryClient`（HTTP → order-svc）、`KbSearchClient`（HTTP → kb-svc，ReAct 路径工具）。进程内 agent 通过 `AgentUseCase` 入站端口直接调用。
 
 ### 5.3 不改的范围
 
@@ -229,8 +229,8 @@ sequenceDiagram
     participant CC as ConversationController
     participant CS as ConversationService
     participant IS as IdempotencyService
-    participant AG as InProcessAiAgentClient
     participant AS as AgentService
+    participant OS as order-svc
     participant LLM as qwen-plus
 
     FE->>GW: POST /api/customer/conversations/{no}/messages (Idempotency-Key, API-Version: 1, Accept: text/event-stream)
@@ -242,17 +242,17 @@ sequenceDiagram
     Note over IS: 开启事务
     IS->>IS: 预留 PENDING（冲突→IDEMPOTENCY_KEY_REUSED）
     CS->>CS: conversation.addCustomerMessage（非 ACTIVE→异常）
-    CS->>AG: streamReply(replyRequest, 转发流)
-    AG->>AS: streamReply(toCommand, CollectingReplyStream)
+    CS->>OS: GET /orders（HTTP Service Client + LoadBalancer）
+    OS-->>CS: 近期订单摘要
+    CS->>AS: AgentUseCase.streamReply(command, CollectingReplyStream)
     AS->>LLM: 规则快路径或 ReAct（工具→kb-svc）
     loop 逐 token
         LLM-->>AS: token
-        AS-->>AG: emitChunk
-        AG-->>CS: 转发 chunk
+        AS-->>CS: emitChunk
         CS-->>CC: emitChunk
         CC-->>FE: event: chunk {token}
     end
-    AS-->>AG: emitDone(完整回复)
+    AS-->>CS: emitDone(完整回复)
     CS->>CS: conversation.addAgentReply + saveAndFlush
     IS->>IS: complete(缓存 MessageThread JSON) + 提交事务
     CS-->>CC: emitDone(thread)
@@ -282,11 +282,6 @@ sequenceDiagram
 ### 8.3 关键伪代码
 
 ```text
-// InProcessAiAgentClient —— 进程内适配器（纯契约转换，流直接透传）
-function streamReply(ReplyRequest request, ReplyStream stream):
-    agentUseCase.streamReply(toCommand(request), stream)   // blockLast，同步返回；错误语义由调用方流包装器处理
-    // toCommand：MessageRole 枚举→字符串 role，OrderQueryClient.OrderSummary→GenerateReplyCommand.OrderSummary
-
 // ConversationService.streamMessage —— 幂等流式（复用 execute 单事务骨架）
 function streamMessage(command, key, ConversationStream out):
     agentStream = new ForwardingAgentStream(out)
@@ -299,7 +294,7 @@ function streamMessage(command, key, ConversationStream out):
             conversation.addCustomerMessage(command.content)           // 非 ACTIVE→ConversationNotActiveException
             saveAndFlush()
             orders = orderQueryClient.getRecentOrders(customerId)
-            aiAgentClient.streamReply(buildReplyRequest(...), agentStream)
+            agentUseCase.streamReply(buildGenerateReplyCommand(...), agentStream)
             conversation.addAgentReply(agentStream.fullContent())      // 空内容→AiAgentUnavailableException
             saveAndFlush()
             return toThread(conversation)
@@ -355,7 +350,6 @@ data: {"conversationNo":"C202608300001","messages":[{"id":1,"seqNo":1,"role":"CU
 | `Accept` 与 event-stream 不兼容 | 流前 `406`（Spring 内容协商） | — |
 | 会话不存在 / 非 ACTIVE / 幂等冲突 | 流中 `error` 事件 | `CONVERSATION_NOT_FOUND` / `CONVERSATION_NOT_ACTIVE` / `IDEMPOTENCY_KEY_REUSED` |
 | LLM 失败、订单上下文失败 | 流中 `error` 事件 | `LLM_UNAVAILABLE` / `EXTERNAL_DEPENDENCY_FAILED` |
-| mock 未激活时调用 `/mock/agent/*` | `409` problem+json | `MOCK_ADAPTER_INACTIVE` |
 
 ## 10. 应用结构
 
@@ -370,20 +364,18 @@ org.acm.ca
 │   │   ├── AgentUseCase / GenerateReplyCommand / ReplyStream      # 现有
 │   │   └── ConversationUseCase / commands / queries / ConversationStream  # 迁入 + 新流式回调
 │   ├── port/out
-│   │   ├── AiAgentClient        # 改流式签名；DTO 嵌套保留
-│   │   ├── OrderQueryClient     # 迁入
+│   │   ├── OrderQueryClient     # HTTP → order-svc
 │   │   └── KbSearchClient       # 现有
 │   ├── service
 │   │   ├── AgentService         # 现有（混合范式内核）
 │   │   ├── ConversationService  # 迁入 + streamMessage 变体
 │   │   ├── IdempotencyService   # 迁入；streamMessage 复用 execute 单事务骨架
-│   │   └── InProcessAiAgentClient  # 新增
 │   ├── idempotency/             # 迁入：IdempotencyRecord + 仓库
 │   └── rule/                    # 现有：ReplyRule/ReplyRulesConfig/RuleRouter
 ├── infra
 │   ├── AuditingConfig           # 迁入
 │   ├── SseExecutorConfig        # 现有 agentExecutor 迁出为共享池
-│   ├── client/                  # MockAiAgentClient/MockOrderQueryClient（改名）+ KbSearchClientImpl
+│   ├── client/                  # OrderServiceHttpClient/OrderQueryClientImpl + KbSearchClientImpl
 │   ├── llm/                     # 现有：ChatClientConfig/KbSearchTool
 │   └── observability/           # 现有：ToolCallObservingAdvisor
 └── interfaces/http
@@ -397,13 +389,13 @@ org.acm.ca
 
 ## 11. 技术决策
 
-1. **适配器选择**：`@ConditionalOnProperty(name = "customer.adapters.ai-agent", havingValue = "real", matchIfMissing = true)`（InProcess）/ `havingValue = "mock"`（Mock）。集成测试显式设 `mock`。
-2. **ReplyStream 复用**：`AiAgentClient` 出站端口直接复用 `application.port.in.ReplyStream` 回调类型（传输中立，避免重复定义三方法回调）。
+1. **进程内 agent 调用**：`ConversationService` 直接依赖 `AgentUseCase`，不为同模块调用增加出站端口与透传适配器。
+2. **订单 HTTP 调用**：`@ImportHttpServices(group = "order-svc")` 注册声明式客户端；分组名由 LoadBalancer 解析为 Eureka 实例，Java 配置显式设置 2s 连接超时与 5s 读取超时。
 3. **事务与流式**：`executeStreaming` 沿用 `execute` 的单事务骨架（`@Transactional` 即边界），action 携带业务流回调；chunk 网络写发生在事务内（已评估，见 §13）。
 4. **SseEmitter 超时**：业务流式端点 60s（ReAct 多轮 + LLM 30s + 持久化余量）；agent 端点维持 30s。
 5. **网关**：单路由多 Path 谓词，StripPrefix=2；`GatewayRoutesTest` 断言 3 条路由（order-svc/kb-svc/customer-agent）。
 6. **前端 SSE 解析**：fetch + ReadableStream 手工解析（`event:`/`data:`/空行分帧、多 data 行 `\n` 连接、CRLF 兼容）；流前 problem+json 走既有 `CustomerServiceError` 映射；`error` 事件构造 `CustomerServiceError(code, detail, 200)`。
-7. **依赖增删**：+ data-jpa/flyway/postgresql/common-lib/integrationTest+Testcontainers/jacoco 合并报告；− resilience4j、aspectjweaver、spring-boot-http-client（保留 spring-boot-restclient 供 RestClient）。
+7. **依赖增删**：+ data-jpa/flyway/postgresql/common-lib/integrationTest+Testcontainers/jacoco 合并报告、spring-boot-http-client；− resilience4j、aspectjweaver。
 
 ## 12. 一致性与失败处理
 
@@ -420,5 +412,4 @@ org.acm.ca
 
 1. 前端体验：发送中断（AbortController）、打字机节流渲染、失败自动重试按钮。
 2. token 用量：done 事件附带 usage（沿用 2026-08-29 文档 §12.4），由本服务持久化成本数据（tech_debt 已有条目，消费方从 customer-svc 变为本服务）。
-3. OrderQueryClient 真实 order-svc HTTP 适配器（替换 mock，无需改业务层）。
-4. 事务拆分：消息先落库 + agent 回复异步补偿，替换单事务长连接。
+3. 事务拆分：消息先落库 + agent 回复异步补偿，替换单事务长连接。

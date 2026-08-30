@@ -90,8 +90,7 @@ public class GlobalExceptionHandler {
           "CONVERSATION_STATE_CONFLICT",
           "FEEDBACK_ALREADY_SUBMITTED",
           "IDEMPOTENCY_KEY_REUSED",
-          "CONVERSATION_CONCURRENTLY_MODIFIED",
-          "MOCK_ADAPTER_INACTIVE" -> HttpStatus.CONFLICT;
+          "CONVERSATION_CONCURRENTLY_MODIFIED" -> HttpStatus.CONFLICT;
       case "LLM_UNAVAILABLE", "EXTERNAL_DEPENDENCY_FAILED" -> HttpStatus.BAD_GATEWAY;
       default ->
           throw new IllegalStateException(

@@ -6,4 +6,8 @@ public class OrderQueryUnavailableException extends BusinessException {
   public OrderQueryUnavailableException(String message) {
     super("EXTERNAL_DEPENDENCY_FAILED", message);
   }
+
+  public OrderQueryUnavailableException(String message, Throwable cause) {
+    super("EXTERNAL_DEPENDENCY_FAILED", message, cause);
+  }
 }
