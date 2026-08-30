@@ -7,7 +7,7 @@ import { KbList } from "@/components/kb/kb-list"
 import { SearchPanel } from "@/components/kb/search-panel"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { mockKbService } from "@/services/mock-kb-service"
+import { KbServiceError, kbService } from "@/services/kb-service"
 import type {
   EvalRunReport,
   KbDocument,
@@ -25,16 +25,17 @@ function App() {
   const [evalRun, setEvalRun] = useState<EvalRunReport | null>(null)
   const [isRunningEval, setIsRunningEval] = useState(false)
   const [isLoadingKbs, setIsLoadingKbs] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const selectedKb = knowledgeBases.find((kb) => kb.id === selectedKbId) ?? null
 
   const refreshDocuments = useCallback(async (kbId: string) => {
-    const docs = await mockKbService.listDocuments(kbId)
+    const docs = await kbService.listDocuments(kbId)
     setDocuments(docs)
   }, [])
 
   const refreshKnowledgeBases = useCallback(async () => {
-    const kbs = await mockKbService.listKnowledgeBases()
+    const kbs = await kbService.listKnowledgeBases()
     setKnowledgeBases(kbs)
     return kbs
   }, [])
@@ -42,14 +43,22 @@ function App() {
   useEffect(() => {
     const loadInitial = async () => {
       setIsLoadingKbs(true)
-      const kbs = await refreshKnowledgeBases()
-      const firstActive = kbs.find((kb) => kb.status === "active") ?? kbs[0]
+      setError(null)
+      try {
+        const kbs = await refreshKnowledgeBases()
+        const firstActive = kbs.find((kb) => kb.status === "active") ?? kbs[0]
 
-      if (firstActive) {
-        setSelectedKbId(firstActive.id)
-        await refreshDocuments(firstActive.id)
+        if (firstActive) {
+          setSelectedKbId(firstActive.id)
+          await refreshDocuments(firstActive.id)
+        }
+      } catch (cause) {
+        setError(
+          cause instanceof KbServiceError ? cause.message : "无法加载知识库，请稍后重试",
+        )
+      } finally {
+        setIsLoadingKbs(false)
       }
-      setIsLoadingKbs(false)
     }
 
     void loadInitial()
@@ -59,7 +68,11 @@ function App() {
     (kbId: string) => {
       setSelectedKbId(kbId)
       setSearchResults([])
-      void refreshDocuments(kbId)
+      void refreshDocuments(kbId).catch((cause: unknown) => {
+        setError(
+          cause instanceof KbServiceError ? cause.message : "加载文档失败，请稍后重试",
+        )
+      })
     },
     [refreshDocuments],
   )
@@ -71,14 +84,21 @@ function App() {
         return
       }
 
-      const updated =
-        kb.status === "active"
-          ? await mockKbService.archiveKnowledgeBase(kbId)
-          : await mockKbService.activateKnowledgeBase(kbId)
+      setError(null)
+      try {
+        const updated =
+          kb.status === "active"
+            ? await kbService.archiveKnowledgeBase(kbId)
+            : await kbService.activateKnowledgeBase(kbId)
 
-      setKnowledgeBases((prev) =>
-        prev.map((item) => (item.id === updated.id ? { ...updated } : item)),
-      )
+        setKnowledgeBases((prev) =>
+          prev.map((item) => (item.id === updated.id ? { ...updated } : item)),
+        )
+      } catch (cause) {
+        setError(
+          cause instanceof KbServiceError ? cause.message : "更新知识库状态失败，请稍后重试",
+        )
+      }
     },
     [knowledgeBases],
   )
@@ -90,11 +110,16 @@ function App() {
       }
 
       setIsUploading(true)
+      setError(null)
       try {
-        const doc = await mockKbService.uploadDocument(selectedKbId, file)
+        const doc = await kbService.uploadDocument(selectedKbId, file)
         setDocuments((prev) => [...prev, doc])
         const kbs = await refreshKnowledgeBases()
         setKnowledgeBases(kbs)
+      } catch (cause) {
+        setError(
+          cause instanceof KbServiceError ? cause.message : "上传文档失败，请稍后重试",
+        )
       } finally {
         setIsUploading(false)
       }
@@ -108,11 +133,18 @@ function App() {
         return
       }
 
-      await mockKbService.deleteDocument(selectedKbId, docId)
-      setDocuments((prev) => prev.filter((doc) => doc.id !== docId))
+      setError(null)
+      try {
+        await kbService.deleteDocument(selectedKbId, docId)
+        setDocuments((prev) => prev.filter((doc) => doc.id !== docId))
 
-      const kbs = await refreshKnowledgeBases()
-      setKnowledgeBases(kbs)
+        const kbs = await refreshKnowledgeBases()
+        setKnowledgeBases(kbs)
+      } catch (cause) {
+        setError(
+          cause instanceof KbServiceError ? cause.message : "删除文档失败，请稍后重试",
+        )
+      }
     },
     [selectedKbId, refreshKnowledgeBases],
   )
@@ -124,8 +156,11 @@ function App() {
       }
 
       setIsSearching(true)
+      setError(null)
       try {
-        setSearchResults(await mockKbService.search(selectedKbId, query, 3))
+        setSearchResults(await kbService.search(selectedKbId, query, 3))
+      } catch (cause) {
+        setError(cause instanceof KbServiceError ? cause.message : "检索失败，请稍后重试")
       } finally {
         setIsSearching(false)
       }
@@ -139,14 +174,19 @@ function App() {
     }
 
     setIsRunningEval(true)
+    setError(null)
     try {
-      const suites = await mockKbService.listEvalSuites()
-      const report = await mockKbService.startEvalRun(
-        selectedKbId,
-        suites[0]?.id ?? "suite-001",
-        3,
-      )
+      const suites = await kbService.listEvalSuites()
+      const suite = suites[0]
+      if (!suite) {
+        setError("暂无评估测试套件，请先在知识库服务中创建")
+        return
+      }
+
+      const report = await kbService.startEvalRun(selectedKbId, suite.id, 3)
       setEvalRun(report)
+    } catch (cause) {
+      setError(cause instanceof KbServiceError ? cause.message : "发起评估失败，请稍后重试")
     } finally {
       setIsRunningEval(false)
     }
@@ -165,6 +205,11 @@ function App() {
           </p>
         </div>
       </header>
+      {error && (
+        <div className="mx-auto mb-4 max-w-6xl rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-[300px_1fr]">
         <Card>

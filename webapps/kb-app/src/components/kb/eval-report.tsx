@@ -25,7 +25,7 @@ export function EvalReport({ report, isRunning }: EvalReportProps) {
   if (!report) {
     return (
       <p className="rounded-2xl border border-dashed border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
-        尚无评估报告，点击「发起评估」生成 Mock 报告。
+        尚无评估报告，点击「发起评估」生成评估报告。
       </p>
     )
   }
