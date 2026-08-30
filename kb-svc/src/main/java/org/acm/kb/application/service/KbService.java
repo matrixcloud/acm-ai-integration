@@ -20,10 +20,8 @@ import org.acm.kb.domain.kb.KnowledgeBase;
 import org.acm.kb.domain.kb.KnowledgeBaseNotFoundException;
 import org.acm.kb.domain.kb.KnowledgeBaseRepository;
 import org.acm.kb.domain.shared.InvalidRequestException;
-import org.springframework.ai.document.DocumentReader;
+import org.acm.kb.infra.reader.MarkdownTextReader;
 import org.springframework.ai.reader.TextReader;
-import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
-import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -261,16 +259,14 @@ public class KbService implements KbUseCase {
         filename != null && filename.contains(".")
             ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
             : "txt";
-    DocumentReader reader;
-    ByteArrayResource resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
     if ("md".equals(extension) || "markdown".equals(extension)) {
-      reader = new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.defaultConfig());
-    } else if ("txt".equals(extension)) {
-      reader = new TextReader(resource);
-    } else {
-      throw new InvalidRequestException(
-          "Unsupported file type: only .txt and .md are allowed, got .%s".formatted(extension));
+      return new MarkdownTextReader(content).read();
     }
-    return reader.read();
+    if ("txt".equals(extension)) {
+      ByteArrayResource resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
+      return new TextReader(resource).read();
+    }
+    throw new InvalidRequestException(
+        "Unsupported file type: only .txt and .md are allowed, got .%s".formatted(extension));
   }
 }
