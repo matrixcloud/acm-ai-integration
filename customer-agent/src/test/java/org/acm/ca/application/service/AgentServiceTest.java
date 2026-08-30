@@ -79,7 +79,7 @@ class AgentServiceTest {
   }
 
   @Test
-  void ruleHitRegistersOrderQueryToolButNotKbToolAndStreamsChunksAndDone() {
+  void fastPathRegistersOnlyOrderQueryTool() {
     when(streamSpec.content()).thenReturn(Flux.just("您", "好"));
     ReplyStream stream = mock(ReplyStream.class);
 
@@ -88,6 +88,15 @@ class AgentServiceTest {
     verify(requestSpec).tools(orderQueryTool);
     verify(requestSpec, never()).tools(kbSearchTool);
     verify(kbSearchTool, never()).catalogText();
+  }
+
+  @Test
+  void replyTokensAreStreamedAndDoneCarriesConcatenatedReply() {
+    when(streamSpec.content()).thenReturn(Flux.just("您", "好"));
+    ReplyStream stream = mock(ReplyStream.class);
+
+    service.streamReply(command("我要退款"), stream);
+
     verify(stream).emitChunk("您");
     verify(stream).emitChunk("好");
     verify(stream).emitDone("您好");

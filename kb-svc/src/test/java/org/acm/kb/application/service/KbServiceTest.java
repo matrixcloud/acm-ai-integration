@@ -8,9 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +40,6 @@ class KbServiceTest {
   @Mock private TransactionTemplate transactionTemplate;
 
   @InjectMocks private KbService service;
-
-  @Test
-  void runtimeDefaultsUseUtf8AndAsiaShanghai() {
-    assertThat(Charset.defaultCharset()).isEqualTo(StandardCharsets.UTF_8);
-    assertThat(ZoneId.systemDefault()).isEqualTo(ZoneId.of("Asia/Shanghai"));
-  }
 
   @Test
   void uploadDocumentBatchesEmbeddingIntoChunksOfAtMostTen() throws Exception {

@@ -5,7 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +21,7 @@ import org.acm.os.application.exception.RetryableOperationException;
 import org.acm.os.application.port.in.ShipmentUseCase.ShipmentLine;
 import org.acm.os.application.port.out.InventoryClient;
 import org.acm.os.application.port.out.LogisticsClient;
+import org.acm.os.application.port.out.LogisticsClient.AddressSnapshot;
 import org.acm.os.application.port.out.PaymentClient;
 import org.acm.os.domain.order.Order;
 import org.acm.os.domain.order.OrderItem;
@@ -29,6 +31,7 @@ import org.acm.os.domain.order.OrderStatus;
 import org.acm.os.domain.payment.Payment;
 import org.acm.os.domain.payment.PaymentStatus;
 import org.acm.os.domain.refund.Refund;
+import org.acm.os.domain.refund.RefundStatus;
 import org.acm.os.domain.shipment.Shipment;
 import org.acm.os.domain.shipment.ShipmentStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,11 +39,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
+/**
+ * Lifecycle orchestration tests built on real domain aggregates: only the outbound ports are
+ * mocked, so assertions verify actual state transitions rather than delegation to mocked entities.
+ */
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class OrderLifecycleServiceTest {
   @Mock private OrderRepository orderRepository;
   @Mock private InventoryClient inventoryClient;
@@ -55,9 +59,12 @@ class OrderLifecycleServiceTest {
     service =
         new OrderLifecycleService(
             orderRepository, inventoryClient, paymentClient, logisticsClient, idempotencyService);
-    when(idempotencyService.execute(any(), any()))
+    // Idempotency pass-through: this suite exercises lifecycle orchestration, not idempotency.
+    lenient()
+        .when(idempotencyService.execute(any(), any()))
         .thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(1)).get());
-    when(idempotencyService.executeRetryable(any(), any()))
+    lenient()
+        .when(idempotencyService.executeRetryable(any(), any()))
         .thenAnswer(
             invocation -> {
               try {
@@ -66,181 +73,249 @@ class OrderLifecycleServiceTest {
                 throw new RetryableOperationException(exception.original());
               }
             });
-    when(orderRepository.saveAndFlush(any(Order.class)))
+    lenient()
+        .when(orderRepository.saveAndFlush(any(Order.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test
-  void createsPaymentUsingServerAmount() {
+  void createPaymentUsesOrderAmountAndAttachesCreatedPayment() {
     Order order = order();
-    Payment payment = mock(Payment.class);
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(order.getPayableTotal()).thenReturn(new BigDecimal("99.00"));
-    when(order.getCurrency()).thenReturn("CNY");
-    when(paymentClient.create("ORD-1", new BigDecimal("99.00"), "CNY", "key"))
+    givenOrder(order);
+    when(paymentClient.create(order.getOrderNo(), new BigDecimal("99.00"), "CNY", "key"))
         .thenReturn(new PaymentClient.PaymentSession("token"));
-    when(order.addPayment("token")).thenReturn(payment);
 
-    assertThat(service.createPayment("ORD-1", "key")).isSameAs(payment);
+    Payment payment = service.createPayment(order.getOrderNo(), "key");
+
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CREATED);
+    assertThat(payment.getAmount()).isEqualByComparingTo("99.00");
+    assertThat(order.getPayments()).containsExactly(payment);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
     verify(orderRepository).saveAndFlush(order);
   }
 
   @Test
-  void succeedsFreshPaymentAfterInventoryConfirmation() {
-    Order order = orderByPayment();
-    Payment payment = mock(Payment.class);
-    when(order.payment("PAY-1")).thenReturn(payment);
-    when(payment.getStatus()).thenReturn(PaymentStatus.CREATED);
-    when(order.getInventoryReservationId()).thenReturn("reservation");
+  void succeedPaymentConfirmsInventoryAndMarksOrderPaid() {
+    Order order = order();
+    Payment payment = order.addPayment("token");
+    givenOrderByPayment(order, payment);
 
-    assertThat(service.succeedPayment("PAY-1", "EXT-1", "key")).isSameAs(order);
+    Order result = service.succeedPayment(payment.getPaymentNo(), "EXT-1", "key");
+
+    assertThat(result).isSameAs(order);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
+    assertThat(payment.getExternalPaymentNo()).isEqualTo("EXT-1");
     verify(inventoryClient).confirm("reservation", "payment-confirm:EXT-1");
-    verify(order).markPaid(payment, "EXT-1");
   }
 
   @Test
-  void duplicateSuccessfulPaymentSkipsInventory() {
-    Order order = orderByPayment();
-    Payment payment = mock(Payment.class);
-    when(order.payment("PAY-1")).thenReturn(payment);
-    when(payment.getStatus()).thenReturn(PaymentStatus.SUCCEEDED);
+  void duplicateSuccessfulPaymentNotificationSkipsInventoryConfirm() {
+    Order order = paidOrder();
+    Payment payment = order.getPayments().get(0);
+    givenOrderByPayment(order, payment);
 
-    service.succeedPayment("PAY-1", "EXT-1", "key");
+    service.succeedPayment(payment.getPaymentNo(), "external-payment", "key");
 
     verify(inventoryClient, never()).confirm(any(), any());
-    verify(order).markPaid(payment, "EXT-1");
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
   }
 
   @Test
-  void marksPaymentFailed() {
-    Order order = orderByPayment();
-    Payment payment = mock(Payment.class);
-    when(order.payment("PAY-1")).thenReturn(payment);
-
-    service.failPayment("PAY-1", "key");
-
-    verify(order).markPaymentFailed(payment);
-  }
-
-  @Test
-  void cancelsPendingOrderByReleasingReservation() {
+  void failPaymentMarksPaymentFailed() {
     Order order = order();
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(order.getStatus()).thenReturn(OrderStatus.PENDING_PAYMENT);
-    when(order.getInventoryReservationId()).thenReturn("reservation");
+    Payment payment = order.addPayment("token");
+    givenOrderByPayment(order, payment);
 
-    service.cancel("ORD-1", "reason", "key");
+    service.failPayment(payment.getPaymentNo(), "key");
 
-    verify(inventoryClient).release("reservation", "cancel-pending:ORD-1");
-    verify(order).cancelPending();
+    assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
+    verify(orderRepository).saveAndFlush(order);
   }
 
   @Test
-  void cancelsPaidOrderWithRefundAndInventoryRestore() {
-    Order order = paidOrderForRefund();
-    Refund refund = refund(false, false);
-    when(order.getStatus()).thenReturn(OrderStatus.PAID);
-    when(order.startCancel(eq("reason"), any())).thenReturn(refund);
-
-    service.cancel("ORD-1", "reason", "key");
-
-    verify(refund).markPaymentRefunded("EXT-REF");
-    verify(refund).markInventoryRestored();
-    verify(order).completeRefund(refund);
-  }
-
-  @Test
-  void requestsAndRejectsRefund() {
+  void cancelPendingOrderReleasesInventoryReservation() {
     Order order = order();
-    Refund refund = mock(Refund.class);
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(order.requestRefund("reason")).thenReturn(refund);
-    assertThat(service.requestRefund("ORD-1", "reason", "key")).isSameAs(refund);
+    givenOrder(order);
 
-    when(orderRepository.findByRefundNoForUpdate("REF-1")).thenReturn(Optional.of(order));
-    when(order.refund("REF-1")).thenReturn(refund);
-    assertThat(service.rejectRefund("REF-1", "admin", "no", "key-2")).isSameAs(refund);
-    verify(order).rejectRefund(refund, "admin", "no");
+    Order result = service.cancel(order.getOrderNo(), "reason", "key");
+
+    assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELED);
+    assertThat(order.getRefunds()).isEmpty();
+    verify(inventoryClient).release("reservation", "cancel-pending:" + order.getOrderNo());
   }
 
   @Test
-  void approvesRefundAndExecutesBothExternalSteps() {
-    Order order = paidOrderForRefund();
-    Refund refund = refund(false, false);
-    when(order.refund("REF-1")).thenReturn(refund);
+  void cancelPaidOrderExecutesRefundWithBothExternalSteps() {
+    Order order = paidOrder();
+    givenOrder(order);
+    when(paymentClient.refund(any(), any(), any(), any()))
+        .thenReturn(new PaymentClient.ExternalRefund("EXT-REF"));
 
-    assertThat(service.approveRefund("REF-1", "admin", "yes", "key")).isSameAs(refund);
+    Order result = service.cancel(order.getOrderNo(), "cancel reason", "key");
 
-    verify(order).approveRefund(refund, "admin", "yes");
-    verify(paymentClient).refund("PAY-1", new BigDecimal("99.00"), "CNY", "refund:REF-1:payment");
-    verify(inventoryClient).restore(eq("ORD-1"), anyList(), eq("refund:REF-1:inventory"));
+    assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELED);
+    Refund refund = order.getRefunds().get(0);
+    assertThat(refund.getStatus()).isEqualTo(RefundStatus.SUCCEEDED);
+    assertThat(refund.isPaymentRefunded()).isTrue();
+    assertThat(refund.isInventoryRestored()).isTrue();
+    verify(paymentClient)
+        .refund(
+            order.getPayments().get(0).getPaymentNo(),
+            new BigDecimal("99.00"),
+            "CNY",
+            "refund:" + refund.getRefundNo() + ":payment");
+    verify(inventoryClient)
+        .restore(
+            eq(order.getOrderNo()), anyList(), eq("refund:" + refund.getRefundNo() + ":inventory"));
   }
 
   @Test
-  void retrySkipsAlreadyCompletedPaymentRefund() {
-    Order order = paidOrderForRefund();
-    Refund refund = refund(true, false);
-    when(order.refund("REF-1")).thenReturn(refund);
+  void requestRefundPutsOrderIntoReviewAndRejectReturnsItToPaid() {
+    Order order = paidOrder();
+    givenOrder(order);
 
-    service.retryRefund("REF-1", "key");
+    Refund requested = service.requestRefund(order.getOrderNo(), "changed mind", "key");
 
-    verify(order).retryRefund(refund);
-    verify(paymentClient, never()).refund(any(), any(), any(), any());
-    verify(inventoryClient).restore(eq("ORD-1"), anyList(), eq("refund:REF-1:inventory"));
+    assertThat(requested.getStatus()).isEqualTo(RefundStatus.PENDING_REVIEW);
+    assertThat(order.getRefunds()).containsExactly(requested);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUND_REVIEW);
+
+    givenOrderByRefund(order, requested);
+    Refund rejected = service.rejectRefund(requested.getRefundNo(), "admin", "no", "key-2");
+
+    assertThat(rejected).isSameAs(requested);
+    assertThat(rejected.getStatus()).isEqualTo(RefundStatus.REJECTED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
   }
 
   @Test
-  void externalRefundFailureMarksDomainFailure() {
-    Order order = paidOrderForRefund();
-    Refund refund = refund(false, false);
-    when(order.refund("REF-1")).thenReturn(refund);
+  void approveRefundExecutesBothExternalStepsAndCompletesRefund() {
+    Order order = paidOrder();
+    givenOrder(order);
+    Refund requested = service.requestRefund(order.getOrderNo(), "refund", "key-1");
+    givenOrderByRefund(order, requested);
+    when(paymentClient.refund(any(), any(), any(), any()))
+        .thenReturn(new PaymentClient.ExternalRefund("EXT-REF"));
+
+    Refund approved = service.approveRefund(requested.getRefundNo(), "admin", "yes", "key-2");
+
+    assertThat(approved).isSameAs(requested);
+    assertThat(approved.getStatus()).isEqualTo(RefundStatus.SUCCEEDED);
+    assertThat(approved.getExternalRefundNo()).isEqualTo("EXT-REF");
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+    verify(paymentClient)
+        .refund(
+            order.getPayments().get(0).getPaymentNo(),
+            new BigDecimal("99.00"),
+            "CNY",
+            "refund:" + requested.getRefundNo() + ":payment");
+    verify(inventoryClient)
+        .restore(
+            eq(order.getOrderNo()),
+            anyList(),
+            eq("refund:" + requested.getRefundNo() + ":inventory"));
+  }
+
+  @Test
+  void retryRefundAfterInventoryFailureOnlyRetriesMissingStep() {
+    Order order = paidOrder();
+    givenOrder(order);
+    Refund requested = service.requestRefund(order.getOrderNo(), "refund", "key-1");
+    givenOrderByRefund(order, requested);
+    when(paymentClient.refund(any(), any(), any(), any()))
+        .thenReturn(new PaymentClient.ExternalRefund("EXT-REF"));
+    doThrow(new IllegalStateException("inventory failed"))
+        .doNothing()
+        .when(inventoryClient)
+        .restore(any(), anyList(), any());
+
+    assertThatThrownBy(
+            () -> service.approveRefund(requested.getRefundNo(), "admin", "yes", "key-2"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThat(requested.isPaymentRefunded()).isTrue();
+    assertThat(requested.isInventoryRestored()).isFalse();
+    assertThat(requested.getStatus()).isEqualTo(RefundStatus.FAILED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUND_FAILED);
+
+    Refund retried = service.retryRefund(requested.getRefundNo(), "key-3");
+
+    assertThat(retried).isSameAs(requested);
+    assertThat(retried.getStatus()).isEqualTo(RefundStatus.SUCCEEDED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+    verify(paymentClient, times(1)).refund(any(), any(), any(), any());
+    verify(inventoryClient, times(2)).restore(any(), anyList(), any());
+  }
+
+  @Test
+  void externalRefundFailureMarksRefundAndOrderFailed() {
+    Order order = paidOrder();
+    givenOrder(order);
+    Refund requested = service.requestRefund(order.getOrderNo(), "refund", "key-1");
+    givenOrderByRefund(order, requested);
     when(paymentClient.refund(any(), any(), any(), any()))
         .thenThrow(new IllegalStateException("payment failed"));
 
-    assertThatThrownBy(() -> service.approveRefund("REF-1", "admin", "yes", "key"))
+    assertThatThrownBy(
+            () -> service.approveRefund(requested.getRefundNo(), "admin", "yes", "key-2"))
         .isInstanceOf(IllegalStateException.class);
-    verify(order).failRefund(refund);
+
+    assertThat(requested.getStatus()).isEqualTo(RefundStatus.FAILED);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUND_FAILED);
+    // One save from requestRefund, one from the failure-compensation path in executeRefund.
+    verify(orderRepository, times(2)).saveAndFlush(order);
+  }
+
+  @Test
+  void createShipmentValidatesAgainstRealOrderAndAllocatesShipment() {
+    Order order = paidOrder();
+    givenOrder(order);
+    when(logisticsClient.createShipment(
+            eq(order.getOrderNo()),
+            any(),
+            eq("MOCK_EXPRESS"),
+            eq(
+                new AddressSnapshot(
+                    "Ada", "13800000000", "Shanghai", "Shanghai", "Pudong", "No. 1 Road")),
+            anyList(),
+            eq("key")))
+        .thenReturn(new LogisticsClient.LogisticsShipment("TRACK-1"));
+
+    Shipment shipment =
+        service.createShipment(
+            order.getOrderNo(), "MOCK_EXPRESS", List.of(new ShipmentLine("item-1", 1)), "key");
+
+    assertThat(shipment.getTrackingNo()).isEqualTo("TRACK-1");
+    assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.SHIPPED);
+    assertThat(order.getShipments()).containsExactly(shipment);
+    assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED);
     verify(orderRepository).saveAndFlush(order);
   }
 
   @Test
-  void createsShipmentAfterDomainValidationAndExternalCall() {
-    Order order = order();
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(order.getRecipientName()).thenReturn("Ada");
-    when(order.getRecipientPhone()).thenReturn("13800000000");
-    when(order.getProvince()).thenReturn("Shanghai");
-    when(order.getCity()).thenReturn("Shanghai");
-    when(order.getDistrict()).thenReturn("Pudong");
-    when(order.getDetailAddress()).thenReturn("Road 1");
+  void confirmReceiptDeliversShipmentAndDuplicateNotificationSkipsLogistics() {
+    Order order = paidOrder();
+    givenOrder(order);
     when(logisticsClient.createShipment(
-            eq("ORD-1"), any(), eq("MOCK_EXPRESS"), any(), anyList(), eq("key")))
+            eq(order.getOrderNo()), any(), eq("MOCK_EXPRESS"), any(), anyList(), eq("ship-key")))
         .thenReturn(new LogisticsClient.LogisticsShipment("TRACK-1"));
+    service.createShipment(
+        order.getOrderNo(), "MOCK_EXPRESS", List.of(new ShipmentLine("item-1", 1)), "ship-key");
+    Shipment shipment = order.getShipments().get(0);
 
-    Shipment result =
-        service.createShipment(
-            "ORD-1", "MOCK_EXPRESS", List.of(new ShipmentLine("item-1", 1)), "key");
+    Order result =
+        service.confirmReceipt(order.getOrderNo(), shipment.getShipmentNo(), "receipt-key");
 
-    assertThat(result.getTrackingNo()).isEqualTo("TRACK-1");
-    verify(order).allocateShipment(result);
-  }
+    assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELIVERED);
+    verify(logisticsClient)
+        .confirmReceipt("TRACK-1", "confirm-receipt:" + shipment.getShipmentNo());
 
-  @Test
-  void confirmsReceiptAndSkipsDuplicateLogisticsCall() {
-    Order order = order();
-    Shipment shipment = mock(Shipment.class);
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(order.shipment("SHP-1")).thenReturn(shipment);
-    when(shipment.getStatus()).thenReturn(ShipmentStatus.SHIPPED);
-    when(shipment.getTrackingNo()).thenReturn("TRACK-1");
-    when(shipment.getShipmentNo()).thenReturn("SHP-1");
+    service.confirmReceipt(order.getOrderNo(), shipment.getShipmentNo(), "receipt-key-2");
 
-    service.confirmReceipt("ORD-1", "SHP-1", "key");
-    verify(logisticsClient).confirmReceipt("TRACK-1", "confirm-receipt:SHP-1");
-
-    when(shipment.getStatus()).thenReturn(ShipmentStatus.DELIVERED);
-    service.confirmReceipt("ORD-1", "SHP-1", "key-2");
-    verify(logisticsClient, times(1)).confirmReceipt("TRACK-1", "confirm-receipt:SHP-1");
+    verify(logisticsClient, times(1)).confirmReceipt(any(), any());
   }
 
   @Test
@@ -250,42 +325,49 @@ class OrderLifecycleServiceTest {
         .isInstanceOf(OrderNotFoundException.class);
   }
 
-  private Order order() {
-    Order order = mock(Order.class);
-    when(order.getOrderNo()).thenReturn("ORD-1");
+  private void givenOrder(Order order) {
+    when(orderRepository.findByOrderNoForUpdate(order.getOrderNo())).thenReturn(Optional.of(order));
+  }
+
+  private void givenOrderByPayment(Order order, Payment payment) {
+    when(orderRepository.findByPaymentNoForUpdate(payment.getPaymentNo()))
+        .thenReturn(Optional.of(order));
+  }
+
+  private void givenOrderByRefund(Order order, Refund refund) {
+    when(orderRepository.findByRefundNoForUpdate(refund.getRefundNo()))
+        .thenReturn(Optional.of(order));
+  }
+
+  private static OrderItem item(int quantity) {
+    OrderItem item = new OrderItem();
+    item.setId("item-1");
+    item.setSkuId("SKU-001");
+    item.setProductName("Mouse");
+    item.setUnitPrice(new BigDecimal("99.00"));
+    item.setQuantity(quantity);
+    return item;
+  }
+
+  private static Order order() {
+    Order order =
+        Order.create(
+            "customer-1",
+            "CNY",
+            "Ada",
+            "13800000000",
+            "Shanghai",
+            "Shanghai",
+            "Pudong",
+            "No. 1 Road",
+            List.of(item(1)));
+    order.setInventoryReservationId("reservation");
     return order;
   }
 
-  private Order orderByPayment() {
+  private static Order paidOrder() {
     Order order = order();
-    when(orderRepository.findByPaymentNoForUpdate("PAY-1")).thenReturn(Optional.of(order));
+    order.markPaid(order.addPayment("token"), "external-payment");
     return order;
-  }
-
-  private Order paidOrderForRefund() {
-    Order order = order();
-    Payment payment = mock(Payment.class);
-    OrderItem item = mock(OrderItem.class);
-    when(orderRepository.findByOrderNoForUpdate("ORD-1")).thenReturn(Optional.of(order));
-    when(orderRepository.findByRefundNoForUpdate("REF-1")).thenReturn(Optional.of(order));
-    when(order.getPayments()).thenReturn(List.of(payment));
-    when(payment.getStatus()).thenReturn(PaymentStatus.SUCCEEDED);
-    when(payment.getPaymentNo()).thenReturn("PAY-1");
-    when(order.getItems()).thenReturn(List.of(item));
-    when(item.getSkuId()).thenReturn("SKU-1");
-    when(item.getQuantity()).thenReturn(1);
-    return order;
-  }
-
-  private Refund refund(boolean paymentRefunded, boolean inventoryRestored) {
-    Refund refund = mock(Refund.class);
-    when(refund.getRefundNo()).thenReturn("REF-1");
-    when(refund.isPaymentRefunded()).thenReturn(paymentRefunded);
-    when(refund.isInventoryRestored()).thenReturn(inventoryRestored);
-    when(refund.getAmount()).thenReturn(new BigDecimal("99.00"));
-    when(refund.getCurrency()).thenReturn("CNY");
-    when(paymentClient.refund(any(), any(), any(), any()))
-        .thenReturn(new PaymentClient.ExternalRefund("EXT-REF"));
-    return refund;
   }
 }
