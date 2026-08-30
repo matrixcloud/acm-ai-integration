@@ -8,6 +8,8 @@ import org.acm.ca.application.port.out.KbSearchClient.KbChunk;
 import org.acm.ca.application.port.out.KbSearchClient.KbSummary;
 import org.acm.ca.application.port.out.KbSearchClient.SearchRequest;
 import org.acm.ca.application.rule.ReplyRulesConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class KbSearchTool {
+
+  private static final Logger log = LoggerFactory.getLogger(KbSearchTool.class);
 
   private static final Duration CATALOG_TTL = Duration.ofSeconds(60);
 
@@ -54,6 +58,7 @@ public class KbSearchTool {
           .map(c -> "- " + c.content() + "（来源：" + c.documentName() + "）")
           .collect(Collectors.joining("\n"));
     } catch (Exception e) {
+      log.warn("llm.tool op=searchKnowledgeBase kbNo={} query={} failed", kbNo, query, e);
       return "知识库检索失败：" + e.getMessage() + "。请基于已有信息回答或建议客户稍后重试。";
     }
   }
@@ -90,6 +95,7 @@ public class KbSearchTool {
       catalogFetchedAt = now;
       return fresh;
     } catch (Exception e) {
+      log.warn("llm.tool op=listKnowledgeBases catalogRefresh failed, serving stale cache", e);
       return catalogCache;
     }
   }

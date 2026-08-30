@@ -4,6 +4,8 @@ import java.util.stream.Collectors;
 import org.acm.ca.application.port.out.OrderQueryClient;
 import org.acm.ca.application.port.out.OrderQueryClient.OrderDetail;
 import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OrderQueryTool {
+
+  private static final Logger log = LoggerFactory.getLogger(OrderQueryTool.class);
 
   private final OrderQueryClient orderQueryClient;
 
@@ -31,6 +35,7 @@ public class OrderQueryTool {
           .map(OrderQueryTool::formatDetail)
           .orElse("未查询到订单号 %s 对应的订单。".formatted(orderNo));
     } catch (Exception e) {
+      log.warn("llm.tool op=queryOrderByOrderNo orderNo={} failed", orderNo, e);
       return "查询订单失败：%s。请告知客户订单服务暂不可用，建议稍后重试。".formatted(e.getMessage());
     }
   }
@@ -44,6 +49,7 @@ public class OrderQueryTool {
       }
       return orders.stream().map(OrderQueryTool::formatSummary).collect(Collectors.joining("\n"));
     } catch (Exception e) {
+      log.warn("llm.tool op=queryOrdersByPhone failed", e);
       return "查询订单失败：%s。请告知客户订单服务暂不可用，建议稍后重试。".formatted(e.getMessage());
     }
   }

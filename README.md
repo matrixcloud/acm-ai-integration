@@ -186,7 +186,6 @@ lefthook install
 | `EUREKA_SERVER_URL` | 注册中心地址，默认 `http://localhost:8761` |
 | `spring.datasource.url` | 每个服务独立库：`cs-agent` / `order` / `kb` |
 | `order.adapters.*` | `order-svc` 外部依赖适配器，默认为 `mock` |
-| `customer.adapters.ai-agent` | `customer-agent` AI 适配器，`real` / `mock` |
 
 ## 文档
 

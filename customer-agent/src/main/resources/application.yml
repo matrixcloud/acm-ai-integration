@@ -42,8 +42,6 @@ logging:
     path: ${LOG_PATH:./logs}
 
 customer:
-  adapters:
-    ai-agent: real
   agent:
     default-system-prompt: |
       你是一个友好专业的电商平台客服助手。你的职责是根据提供的对话历史、订单信息和知识库内容，准确回答客户的问题。你可以调用已注册的工具获取订单或知识库信息。

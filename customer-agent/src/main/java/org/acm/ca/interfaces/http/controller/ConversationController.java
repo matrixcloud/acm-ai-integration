@@ -2,6 +2,7 @@ package org.acm.ca.interfaces.http.controller;
 
 import jakarta.validation.Valid;
 import java.util.concurrent.Executor;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.ca.application.port.in.ConversationUseCase;
 import org.acm.ca.application.port.in.command.SendMessageCommand;
 import org.acm.ca.domain.conversation.Conversation;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+@Slf4j
 @RestController
 @RequestMapping("/conversations")
 public class ConversationController {
@@ -101,6 +103,7 @@ public class ConversationController {
           } catch (BusinessException e) {
             stream.emitError(e.code(), e.getMessage());
           } catch (Exception e) {
+            log.warn("conversation message stream failed conversationNo={}", conversationNo, e);
             emitter.completeWithError(e);
           }
         });

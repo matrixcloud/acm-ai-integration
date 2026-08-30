@@ -2,6 +2,7 @@ package org.acm.ca.interfaces.http.controller;
 
 import jakarta.validation.Valid;
 import java.util.concurrent.Executor;
+import lombok.extern.slf4j.Slf4j;
 import org.acm.ca.application.port.in.AgentUseCase;
 import org.acm.ca.interfaces.http.mapper.AgentRequestMapper;
 import org.acm.ca.interfaces.http.request.AgentReplyRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * returns immediately. The path follows the gateway convention: {@code /api/agent/**} is stripped
  * to {@code /agent/**} by the gateway's {@code StripPrefix=2} filter.
  */
+@Slf4j
 @RestController
 public class AgentController {
 
@@ -41,6 +43,7 @@ public class AgentController {
           try {
             agentUseCase.streamReply(mapper.toCommand(request), new SseReplyStream(emitter));
           } catch (Exception e) {
+            log.warn("agent reply stream failed", e);
             emitter.completeWithError(e);
           }
         });
