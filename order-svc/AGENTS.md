@@ -50,7 +50,7 @@ org.acm.os
 │
 └── interfaces/                       # 适配器层：入站 REST
     └── http/
-        ├── controller/               # 订单、支付、退款审核、发货及 demo Mock Controller
+        ├── controller/               # 订单、支付、退款审核、发货及 Mock Controller（order.adapters.* 门控）
         ├── mapper/                   # OrderRequestMapper、OrderResponseMapper（MapStruct）
         ├── request/                  # 订单、取消/退款、审核、发货及 Mock 配置请求
         ├── response/                 # 订单详情/摘要、支付、退款与物流响应

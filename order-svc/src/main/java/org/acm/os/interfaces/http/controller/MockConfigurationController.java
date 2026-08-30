@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.acm.os.application.port.in.MockConfigurationUseCase;
 import org.acm.os.interfaces.http.request.SetInventoryRequest;
 import org.acm.os.interfaces.http.request.SetProductRequest;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Profile("demo")
 @RequestMapping("/mock")
 @RequiredArgsConstructor
 public class MockConfigurationController {

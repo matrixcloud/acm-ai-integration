@@ -2,7 +2,6 @@ package org.acm.os.interfaces.http.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.acm.os.application.port.in.PaymentUseCase;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Profile("demo")
 @RequestMapping("/mock/payments/{paymentNo}")
 @RequiredArgsConstructor
 public class MockPaymentController {

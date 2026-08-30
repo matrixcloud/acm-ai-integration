@@ -88,7 +88,7 @@ docker compose exec postgres psql -U acm -d acm -c 'CREATE DATABASE kb;'
 export DASHSCOPE_API_KEY=sk-xxxx
 ```
 
-`order-svc` 默认 `demo` profile，商品/库存/支付/物流均为 Mock，不依赖任何外部系统，可直接运行。
+`order-svc` 商品/库存/支付/物流适配器默认 `mock`（`order.adapters.*` 配置），不依赖任何外部系统，可直接运行。
 
 ### 4. 启动后端
 

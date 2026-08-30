@@ -8,18 +8,16 @@ import org.acm.os.application.port.out.InsufficientInventoryException;
 import org.acm.os.application.port.out.InventoryClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
  * In-memory Mock implementation of {@link InventoryClient} (design §11.1: "Mock 库存显式维护可售、
  * 预占和已扣减数量").
  *
- * <p>Registered only for the {@code demo} profile when {@code order.adapters.inventory=mock}. State
- * lives in memory only and insufficient stock fails explicitly.
+ * <p>Registered when {@code order.adapters.inventory=mock}. State lives in memory only and
+ * insufficient stock fails explicitly.
  */
 @Component
-@Profile("demo")
 @ConditionalOnProperty(name = "order.adapters.inventory", havingValue = "mock")
 public class InventoryClientImpl implements InventoryClient {
   private static final int DEFAULT_STOCK = 100;

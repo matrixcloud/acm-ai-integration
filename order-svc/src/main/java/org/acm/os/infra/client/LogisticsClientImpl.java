@@ -7,11 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.acm.os.application.port.out.ExternalDependencyException;
 import org.acm.os.application.port.out.LogisticsClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("demo")
 @ConditionalOnProperty(name = "order.adapters.logistics", havingValue = "mock")
 public class LogisticsClientImpl implements LogisticsClient {
   private static final Set<String> CARRIERS = Set.of("MOCK_EXPRESS");

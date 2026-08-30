@@ -3,11 +3,9 @@ package org.acm.os.infra.client;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.acm.os.application.port.out.MockControlPort;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("demo")
 @RequiredArgsConstructor
 public class MockControlAdapter implements MockControlPort {
   private final ProductCatalogClientImpl productCatalog;

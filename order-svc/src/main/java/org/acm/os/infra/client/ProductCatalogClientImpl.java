@@ -11,18 +11,16 @@ import org.acm.os.application.port.out.ProductNotFoundException;
 import org.acm.os.domain.shared.InvalidRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
  * In-memory Mock implementation of {@link ProductCatalogClient} (design §11.1: "Mock 商品目录保存
  * SKU、名称、单价、币种和可售状态").
  *
- * <p>Registered only for the {@code demo} profile when {@code order.adapters.product=mock}. The
- * catalog is in-memory and is not suitable for production. Unknown SKUs throw explicitly.
+ * <p>Registered when {@code order.adapters.product=mock}. The catalog is in-memory and is not
+ * suitable for production. Unknown SKUs throw explicitly.
  */
 @Component
-@Profile("demo")
 @ConditionalOnProperty(name = "order.adapters.product", havingValue = "mock")
 public class ProductCatalogClientImpl implements ProductCatalogClient {
   private static final Map<String, ProductSnapshot> DEFAULT_CATALOG =

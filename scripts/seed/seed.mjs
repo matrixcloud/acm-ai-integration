@@ -11,7 +11,7 @@
 // 前置（见 README 快速开始）:
 //   - postgres + redis 已启动，且已创建 `order` / `kb` 库
 //   - kb-svc 运行在 8001（其环境需导出 DASHSCOPE_API_KEY）
-//   - order-svc 运行在 8020（默认 demo profile，外部依赖全 Mock）
+//   - order-svc 运行在 8020（外部依赖适配器默认 mock，order.adapters.* 配置）
 // 环境变量可覆盖: KB_BASE_URL / ORDER_BASE_URL。
 
 import { execFileSync } from 'node:child_process';

@@ -5,11 +5,9 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.acm.os.application.port.in.MockConfigurationUseCase;
 import org.acm.os.application.port.out.MockControlPort;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 @Service
-@Profile("demo")
 @RequiredArgsConstructor
 public class MockConfigurationService implements MockConfigurationUseCase {
   private final MockControlPort mockControlPort;

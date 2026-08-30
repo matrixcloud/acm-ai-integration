@@ -4,11 +4,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.acm.os.application.port.out.ExternalDependencyException;
 import org.acm.os.domain.shared.InvalidRequestException;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("demo")
 public class MockFailureRegistry {
   public static final Set<String> CAPABILITIES =
       Set.of(

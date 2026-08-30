@@ -5,8 +5,7 @@ import java.util.List;
 /**
  * Port for the external inventory service (design §5.4).
  *
- * <p>Implemented by a Mock adapter under the {@code demo} profile; a real adapter must be
- * configured for non-demo deployment.
+ * <p>Implemented by a Mock adapter selected via the {@code order.adapters.inventory} property.
  */
 public interface InventoryClient {
   /**

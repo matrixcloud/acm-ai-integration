@@ -6,8 +6,7 @@ import java.util.Set;
 /**
  * Port for the external product catalog (design §5.4).
  *
- * <p>Implemented by a Mock adapter under the {@code demo} profile; a real adapter must be
- * configured for non-demo deployment.
+ * <p>Implemented by a Mock adapter selected via the {@code order.adapters.product} property.
  */
 public interface ProductCatalogClient {
   /**
