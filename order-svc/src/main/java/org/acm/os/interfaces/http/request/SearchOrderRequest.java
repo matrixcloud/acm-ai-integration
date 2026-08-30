@@ -2,19 +2,19 @@ package org.acm.os.interfaces.http.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.acm.os.application.port.in.query.SearchOrderQuery;
 
 /**
- * HTTP request for {@code GET /orders}.
- *
- * <p>Flat query-parameter binding (design §9.1: {@code customerId=&status=&page=&size=}); the
- * {@code OrderRequestMapper} translates it into a {@link SearchOrderQuery}.
+ * Flat query-parameter binding (design §9.1); searches by {@code customerId} or {@code
+ * recipientPhone} (exactly one required). The {@code OrderRequestMapper} translates it into a
+ * {@link SearchOrderQuery}.
  */
 @Data
 public class SearchOrderRequest {
-  @NotBlank private String customerId;
+  private String customerId;
+
+  private String recipientPhone;
 
   private String status;
 

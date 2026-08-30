@@ -14,7 +14,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.acm.ca.application.port.out.OrderQueryClient;
+import org.acm.ca.application.port.out.OrderQueryClient.OrderDetail;
 import org.acm.ca.application.port.out.OrderQueryClient.OrderSummary;
 import org.acm.ca.application.port.out.OrderQueryContractException;
 import org.acm.ca.application.port.out.TransientOrderQueryException;
@@ -52,6 +54,29 @@ class OrderQueryClientImplTest {
           "totalElements": 1,
           "totalPages": 1
         }
+      }
+      """;
+
+  private static final String PHONE_REQUEST_URL =
+      "http://order-svc/orders"
+          + "?recipientPhone=13800000002&page=1&size=20"
+          + "&sortBy=createdAt&direction=DESC";
+  private static final String ORDER_DETAIL_URL = "http://order-svc/orders/ORD-1";
+  private static final String ORDER_DETAIL_JSON =
+      """
+      {
+        "orderNo": "ORD-1",
+        "customerId": "cust-001",
+        "status": "SHIPPED",
+        "currency": "CNY",
+        "itemTotal": 885.00,
+        "payableTotal": 885.00,
+        "items": [
+          { "productName": "SKU-002", "quantity": 2, "unitPrice": 399.00 }
+        ],
+        "shipments": [
+          { "shipmentNo": "SHP-1", "carrierCode": "MOCK_EXPRESS", "status": "SHIPPED" }
+        ]
       }
       """;
 
@@ -132,6 +157,57 @@ class OrderQueryClientImplTest {
     assertThatThrownBy(() -> fixture.client().getRecentOrders("customer-001"))
         .isInstanceOf(OrderQueryContractException.class)
         .hasMessage("Unexpected order-svc response status: HTTP 500 INTERNAL_SERVER_ERROR");
+    fixture.server().verify();
+  }
+
+  @Test
+  void findByRecipientPhoneCallsOrderServiceAndMapsResponse() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(PHONE_REQUEST_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("API-Version", "1"))
+        .andExpect(queryParam("recipientPhone", "13800000002"))
+        .andRespond(withSuccess(PAGE_JSON, MediaType.APPLICATION_JSON));
+
+    List<OrderSummary> result = fixture.client().findByRecipientPhone("13800000002");
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).orderNo()).isEqualTo("ORD-1");
+    fixture.server().verify();
+  }
+
+  @Test
+  void findByOrderNoReturnsDetail() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(ORDER_DETAIL_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("API-Version", "1"))
+        .andRespond(withSuccess(ORDER_DETAIL_JSON, MediaType.APPLICATION_JSON));
+
+    Optional<OrderDetail> result = fixture.client().findByOrderNo("ORD-1");
+
+    assertThat(result).isPresent();
+    OrderDetail detail = result.get();
+    assertThat(detail.status()).isEqualTo("SHIPPED");
+    assertThat(detail.items()).hasSize(1);
+    assertThat(detail.shipments()).hasSize(1);
+    assertThat(detail.shipments().get(0).carrierCode()).isEqualTo("MOCK_EXPRESS");
+    fixture.server().verify();
+  }
+
+  @Test
+  void findByOrderNoReturnsEmptyOnNotFound() {
+    Fixture fixture = fixture();
+    fixture
+        .server()
+        .expect(requestTo(ORDER_DETAIL_URL))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertThat(fixture.client().findByOrderNo("ORD-1")).isEmpty();
     fixture.server().verify();
   }
 

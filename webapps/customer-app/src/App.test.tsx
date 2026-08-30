@@ -75,7 +75,7 @@ describe("App", () => {
     )
 
     await waitFor(() => {
-      expect(mockedCustomerSvc.createConversation).toHaveBeenCalledWith("customer-001")
+      expect(mockedCustomerSvc.createConversation).toHaveBeenCalledWith("cust-001")
     })
 
     const quickQuestion = await screen.findByRole("button", { name: "怎么查询订单进度？" })

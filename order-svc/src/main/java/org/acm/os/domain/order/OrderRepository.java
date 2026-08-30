@@ -50,4 +50,9 @@ public interface OrderRepository extends JpaRepository<Order, String> {
   Page<Order> findByCustomerId(String customerId, Pageable pageable);
 
   Page<Order> findByCustomerIdAndStatus(String customerId, OrderStatus status, Pageable pageable);
+
+  Page<Order> findByRecipientPhone(String recipientPhone, Pageable pageable);
+
+  Page<Order> findByRecipientPhoneAndStatus(
+      String recipientPhone, OrderStatus status, Pageable pageable);
 }

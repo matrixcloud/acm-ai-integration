@@ -124,8 +124,21 @@ public class OrderService implements OrderUseCase {
   @Override
   @Transactional(readOnly = true)
   public Page<Order> search(SearchOrderQuery query) {
+    boolean hasCustomerId = query.getCustomerId() != null && !query.getCustomerId().isBlank();
+    boolean hasRecipientPhone =
+        query.getRecipientPhone() != null && !query.getRecipientPhone().isBlank();
+    if (hasCustomerId == hasRecipientPhone) {
+      throw new InvalidRequestException(
+          "Exactly one of customerId or recipientPhone must be provided");
+    }
     PageRequest pageRequest =
         PageRequest.of(query.getPage() - 1, query.getSize(), buildSort(query));
+    if (hasRecipientPhone) {
+      return query.getStatus() == null
+          ? orderRepository.findByRecipientPhone(query.getRecipientPhone(), pageRequest)
+          : orderRepository.findByRecipientPhoneAndStatus(
+              query.getRecipientPhone(), query.getStatus(), pageRequest);
+    }
     return query.getStatus() == null
         ? orderRepository.findByCustomerId(query.getCustomerId(), pageRequest)
         : orderRepository.findByCustomerIdAndStatus(

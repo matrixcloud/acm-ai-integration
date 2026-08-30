@@ -33,6 +33,7 @@ public interface OrderRequestMapper {
   default SearchOrderQuery toQuery(SearchOrderRequest request) {
     SearchOrderQuery query = new SearchOrderQuery();
     query.setCustomerId(request.getCustomerId());
+    query.setRecipientPhone(request.getRecipientPhone());
     query.setStatus(parseStatus(request.getStatus()));
     query.setPage(request.getPage());
     query.setSize(request.getSize());

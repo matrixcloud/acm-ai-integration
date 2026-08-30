@@ -13,6 +13,7 @@ import org.acm.os.application.idempotency.IdempotencyRecordRepository;
 import org.acm.os.domain.order.Order;
 import org.acm.os.domain.order.OrderItem;
 import org.acm.os.domain.order.OrderRepository;
+import org.acm.os.domain.order.OrderStatus;
 import org.acm.os.domain.payment.Payment;
 import org.acm.os.domain.refund.Refund;
 import org.acm.os.domain.shipment.Shipment;
@@ -28,6 +29,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -241,6 +243,31 @@ class PostgresPersistenceIntegrationTest {
         "Pudong",
         "No. 1 Road",
         List.of(item));
+  }
+
+  @Test
+  void findsOrdersByRecipientPhone() {
+    Order saved = orderRepository.saveAndFlush(order(2));
+
+    var page = orderRepository.findByRecipientPhone("13800000000", PageRequest.of(0, 10));
+
+    assertThat(page.getTotalElements()).isEqualTo(1);
+    assertThat(page.getContent().get(0).getOrderNo()).isEqualTo(saved.getOrderNo());
+  }
+
+  @Test
+  void findsOrdersByRecipientPhoneAndStatus() {
+    orderRepository.saveAndFlush(order(2));
+
+    var pending =
+        orderRepository.findByRecipientPhoneAndStatus(
+            "13800000000", OrderStatus.PENDING_PAYMENT, PageRequest.of(0, 10));
+    var paid =
+        orderRepository.findByRecipientPhoneAndStatus(
+            "13800000000", OrderStatus.PAID, PageRequest.of(0, 10));
+
+    assertThat(pending.getTotalElements()).isEqualTo(1);
+    assertThat(paid.getTotalElements()).isZero();
   }
 
   @TestConfiguration(proxyBeanMethods = false)

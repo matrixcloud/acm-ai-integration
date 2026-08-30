@@ -20,6 +20,7 @@ import org.acm.ca.application.rule.ReplyRulesConfig;
 import org.acm.ca.application.rule.RuleRouter;
 import org.acm.ca.domain.shared.InvalidRequestException;
 import org.acm.ca.infra.llm.KbSearchTool;
+import org.acm.ca.infra.llm.OrderQueryTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
@@ -31,6 +32,7 @@ class AgentServiceTest {
   private ChatClient.ChatClientRequestSpec requestSpec;
   private ChatClient.StreamResponseSpec streamSpec;
   private KbSearchTool kbSearchTool;
+  private OrderQueryTool orderQueryTool;
   private AgentService service;
 
   @BeforeEach
@@ -45,10 +47,16 @@ class AgentServiceTest {
     when(requestSpec.stream()).thenReturn(streamSpec);
 
     kbSearchTool = mock(KbSearchTool.class);
+    orderQueryTool = mock(OrderQueryTool.class);
     ReplyRulesConfig config = configWithRefundRule();
     service =
         new AgentService(
-            chatClient, new RuleRouter(config), kbSearchTool, config, ObservationRegistry.create());
+            chatClient,
+            new RuleRouter(config),
+            kbSearchTool,
+            orderQueryTool,
+            config,
+            ObservationRegistry.create());
   }
 
   private static ReplyRulesConfig configWithRefundRule() {
@@ -69,26 +77,28 @@ class AgentServiceTest {
   }
 
   @Test
-  void ruleHitUsesFastPathWithoutToolsAndStreamsChunksAndDone() {
+  void ruleHitRegistersOrderQueryToolButNotKbToolAndStreamsChunksAndDone() {
     when(streamSpec.content()).thenReturn(Flux.just("您", "好"));
     ReplyStream stream = mock(ReplyStream.class);
 
     service.streamReply(command("我要退款"), stream);
 
-    verify(requestSpec, never()).tools(any(Object[].class));
+    verify(requestSpec).tools(orderQueryTool);
+    verify(requestSpec, never()).tools(kbSearchTool);
     verify(stream).emitChunk("您");
     verify(stream).emitChunk("好");
     verify(stream).emitDone("您好");
   }
 
   @Test
-  void ruleMissRegistersToolsAndStreamsDone() {
+  void ruleMissRegistersOrderAndKbToolsAndStreamsDone() {
     when(streamSpec.content()).thenReturn(Flux.just("请稍候"));
     ReplyStream stream = mock(ReplyStream.class);
 
     service.streamReply(command("你们有什么活动"), stream);
 
-    verify(requestSpec).tools(any(Object[].class));
+    verify(requestSpec).tools(orderQueryTool);
+    verify(requestSpec).tools(kbSearchTool);
     verify(stream).emitDone("请稍候");
   }
 

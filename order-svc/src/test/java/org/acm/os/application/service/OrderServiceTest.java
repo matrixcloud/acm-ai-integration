@@ -248,6 +248,43 @@ class OrderServiceTest {
     verifyNoInteractions(orderRepository);
   }
 
+  @Test
+  void searchByRecipientPhoneUsesPhoneRepositoryMethod() {
+    SearchOrderQuery query = phoneQuery(null, null, null);
+    Page<Order> expected = new PageImpl<>(List.of());
+    when(orderRepository.findByRecipientPhone(eq("13800000002"), any())).thenReturn(expected);
+
+    Page<Order> result = service.search(query);
+
+    assertThat(result).isSameAs(expected);
+    verify(orderRepository).findByRecipientPhone(eq("13800000002"), pageRequestCaptor.capture());
+    assertThat(pageRequestCaptor.getValue().getSort().getOrderFor("createdAt").getDirection())
+        .isEqualTo(Sort.Direction.DESC);
+  }
+
+  @Test
+  void searchRejectsWhenNeitherOrBothKeysProvided() {
+    SearchOrderQuery neither = new SearchOrderQuery();
+    neither.setPage(1);
+    neither.setSize(20);
+
+    assertThatThrownBy(() -> service.search(neither))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exactly one of customerId or recipientPhone must be provided");
+
+    SearchOrderQuery both = new SearchOrderQuery();
+    both.setCustomerId("customer-1");
+    both.setRecipientPhone("13800000002");
+    both.setPage(1);
+    both.setSize(20);
+
+    assertThatThrownBy(() -> service.search(both))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exactly one of customerId or recipientPhone must be provided");
+
+    verifyNoInteractions(orderRepository);
+  }
+
   private static CreateOrderCommand command(CreateOrderCommand.OrderLine... lines) {
     CreateOrderCommand command = new CreateOrderCommand();
     command.setCustomerId("customer-1");
@@ -277,6 +314,17 @@ class OrderServiceTest {
   private static SearchOrderQuery query(OrderStatus status, String sortBy, String direction) {
     SearchOrderQuery query = new SearchOrderQuery();
     query.setCustomerId("customer-1");
+    query.setStatus(status);
+    query.setPage(1);
+    query.setSize(20);
+    query.setSortBy(sortBy);
+    query.setDirection(direction);
+    return query;
+  }
+
+  private static SearchOrderQuery phoneQuery(OrderStatus status, String sortBy, String direction) {
+    SearchOrderQuery query = new SearchOrderQuery();
+    query.setRecipientPhone("13800000002");
     query.setStatus(status);
     query.setPage(1);
     query.setSize(20);

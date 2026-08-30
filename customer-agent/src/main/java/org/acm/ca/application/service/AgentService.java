@@ -12,6 +12,7 @@ import org.acm.ca.application.rule.ReplyRulesConfig;
 import org.acm.ca.application.rule.RuleRouter;
 import org.acm.ca.domain.shared.InvalidRequestException;
 import org.acm.ca.infra.llm.KbSearchTool;
+import org.acm.ca.infra.llm.OrderQueryTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class AgentService implements AgentUseCase {
   private final ChatClient chatClient;
   private final RuleRouter ruleRouter;
   private final KbSearchTool kbSearchTool;
+  private final OrderQueryTool orderQueryTool;
   private final ReplyRulesConfig config;
   private final ObservationRegistry observationRegistry;
 
@@ -36,11 +38,13 @@ public class AgentService implements AgentUseCase {
       ChatClient chatClient,
       RuleRouter ruleRouter,
       KbSearchTool kbSearchTool,
+      OrderQueryTool orderQueryTool,
       ReplyRulesConfig config,
       ObservationRegistry observationRegistry) {
     this.chatClient = chatClient;
     this.ruleRouter = ruleRouter;
     this.kbSearchTool = kbSearchTool;
+    this.orderQueryTool = orderQueryTool;
     this.config = config;
     this.observationRegistry = observationRegistry;
   }
@@ -67,7 +71,7 @@ public class AgentService implements AgentUseCase {
       String systemPrompt = rule.map(ReplyRule::systemPrompt).orElse(config.defaultSystemPrompt());
       String userMessage = buildUserMessage(command);
 
-      var spec = chatClient.prompt().system(systemPrompt).user(userMessage);
+      var spec = chatClient.prompt().system(systemPrompt).user(userMessage).tools(orderQueryTool);
       if (rule.isEmpty()) {
         spec = spec.tools(kbSearchTool);
       }

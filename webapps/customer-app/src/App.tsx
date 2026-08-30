@@ -77,7 +77,7 @@ function App() {
 
   const openConversation = useCallback(async () => {
     try {
-      const conversation = await createConversation("customer-001")
+      const conversation = await createConversation("cust-001")
       if (!isMountedRef.current) return
       setConversationNo(conversation.conversationNo)
       setMessages([...INITIAL_MESSAGES, ...conversation.messages.map(toChatMessage)])

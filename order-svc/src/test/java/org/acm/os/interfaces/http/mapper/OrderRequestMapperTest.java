@@ -75,6 +75,19 @@ class OrderRequestMapperTest {
   }
 
   @Test
+  void mapsSearchRequestByRecipientPhone() {
+    SearchOrderRequest request = new SearchOrderRequest();
+    request.setRecipientPhone("13800000002");
+    request.setPage(1);
+    request.setSize(20);
+
+    SearchOrderQuery query = mapper.toQuery(request);
+
+    assertThat(query.getRecipientPhone()).isEqualTo("13800000002");
+    assertThat(query.getCustomerId()).isNull();
+  }
+
+  @Test
   void parseStatusTreatsMissingValuesAsNoFilter() {
     assertThat(mapper.parseStatus(null)).isNull();
     assertThat(mapper.parseStatus(" ")).isNull();
