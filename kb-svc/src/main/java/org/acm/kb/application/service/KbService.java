@@ -54,6 +54,9 @@ public class KbService implements KbUseCase {
   private final TextSplitter textSplitter;
   private final TransactionTemplate transactionTemplate;
 
+  // 百炼 text-embedding-v4 单次请求批上限 10，超限返回 400 batch size is invalid
+  private static final int EMBEDDING_BATCH_SIZE = 10;
+
   @Override
   @Transactional
   public KnowledgeBase createKnowledgeBase(String name) {
@@ -108,7 +111,10 @@ public class KbService implements KbUseCase {
         savedChunks.add(DocumentChunk.of(doc.getId(), seqNo, chunkText));
         seqNo++;
       }
-      vectorStore.add(vectorDocuments);
+      for (int from = 0; from < vectorDocuments.size(); from += EMBEDDING_BATCH_SIZE) {
+        int to = Math.min(from + EMBEDDING_BATCH_SIZE, vectorDocuments.size());
+        vectorStore.add(vectorDocuments.subList(from, to));
+      }
       transactionTemplate.executeWithoutResult(
           status -> {
             documentChunkRepository.saveAll(savedChunks);
