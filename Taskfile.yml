@@ -178,6 +178,23 @@ tasks:
     cmds:
       - pnpm install
 
+  # ─────────────────────── 演示数据 ───────────────────────
+
+  seed:
+    desc: "Seed 演示数据（kb-svc 需 DASHSCOPE_API_KEY；用法见 scripts/seed/seed.mjs 头注释）"
+    cmds:
+      - node scripts/seed/seed.mjs {{.CLI_ARGS}}
+
+  seed:order:
+    desc: "仅 Seed 订单数据（order-svc 免外部依赖）"
+    cmds:
+      - node scripts/seed/seed.mjs --order-only {{.CLI_ARGS}}
+
+  seed:kb:
+    desc: "仅 Seed 知识库数据（需 DASHSCOPE_API_KEY）"
+    cmds:
+      - node scripts/seed/seed.mjs --kb-only {{.CLI_ARGS}}
+
   # ─────────────────────── 一站式工作流 ───────────────────────
 
   check:

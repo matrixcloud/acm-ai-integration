@@ -43,3 +43,12 @@
 - 起因：这是已确认方案给定参数（connect 2s / read 5s / maxRetries 1 / timeout 8s）的固有算术结果，非实现偏差；若要硬上界需砍单次超时或引入可中断的 TimeLimiter（后者会截断合法 5s 读并引入线程池跳转，已因前述代价显式关闭）
 - 消除方式：收紧单次超时（如 read 3s）使 8s 真实生效；或接受 14.2s 上界并在容量规划时按此口径
 - 来源：review-acm-code F3（WAIVER，待用户确认）
+
+## 2026-08-30 订单发货管理 API 依赖 order_items.id，但订单详情响应未暴露该字段
+
+- 位置：`order-svc` `ShipmentAdminController`（`POST /admin/orders/{orderNo}/shipments` 要求 `orderItemId`）+ `CreateOrderResponse.Item`（仅 `lineNo`，无 `id`）
+- 现状：`shipment_items.order_item_id` 外键指向 `order_items.id`（PK），但订单详情/列表响应均不暴露 `order_items.id`，纯 HTTP 客户端无法拼接发货请求；`scripts/seed/seed.mjs` 以只读 psql 查 `order_items.id` 补该 PK（仍走真实发货 API）
+- 影响：演示后台发货能力无法端到端由 HTTP 驱动；seed 脚本引入只读 DB 依赖
+- 起因：响应 DTO `CreateOrderResponse.Item` 无 `id` 字段，MapStruct 按名映射时静默丢弃 `OrderItem.id`
+- 消除方式：在 `CreateOrderResponse.Item` 增加 `id`（MapStruct 自动映射）或新增 `orderItemId` 字段；验证 shipping 集成测试是否可改为纯 HTTP
+- 来源：seed 交付（发现于 order-svc 冒烟）
